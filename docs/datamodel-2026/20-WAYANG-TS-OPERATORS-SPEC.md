@@ -48,7 +48,7 @@ General continuous activation, production release qualification and ownership ha
 
 1. An operator is identified by `id` and `version` of an `opentsx.processor.v1` description
    ([schema](schemas/opentsx.processor.v1.schema.json)). Descriptions live in `systems/processors/<id>.yaml`; the file
-   name MUST equal the id (checked by `SystemDocTest.java:49-57`).
+   name MUST equal the id (checked by `SystemDocTest.java:71-79`).
 2. The DAG names an operator by its `op`. When the description has `dag.op`, that value is the DAG `op`;
    otherwise the `id` is. Example: `dq.plausible-range` is written as `op: dq.checks` with
    `fixed: { checks: [PLAUSIBLE_RANGE] }` (`systems/processors/dq.plausible-range.yaml`).
@@ -157,11 +157,11 @@ implementations by `tools/java_operator_vectors.py`.
 | `feature.lag` | `series` → `series` | `steps` in `[1, 100000]` (`MAX_WINDOW_VALUES`, `CleanChain.java:38`, `:168`) | keyed (series) | n/a | `clean-ops.v1.json` | yes | yes |
 | `feature.rolling` | `series` → `series` | `window` duration > 0; `fn` ∈ `Fn` values | keyed (series) | n/a | `clean-ops.v1.json` | yes | yes |
 | `stats.welford-ddsketch` | `series` → `stats` | `windows` list of durations, each > 0; `alpha` in (0, 1) (`QuantileSketch.java:58-59`); `maxBins` fixed at 4096 in catalog 1 (`QuantileSketch.java:33`) | windowed | `approximate`, `stats.chan-ddsketch` (S4.3) | `stats-window.v1.json`, `QuantileSketchTest.testVector` | yes | yes |
-| `align.vector` | `series`* → `vector` | positive `every`; `key` (`series`, a tag name, `all`), `agg`, `fill`, non-negative `maxAge` and `lateness`, `emit`, `names` ([11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md), 5a) | windowed | `none` | `align-vector.v1.json` | yes | yes |
+| `align.vector` | `series`* → `vector` | positive `every`; `key` (`series`, a tag name, `all`), `agg`, `fill`, non-negative `maxAge` and `lateness`, `emit`, `names` ([Vector and DAG rules](VECTOR-AND-DAG-SPEC.md#21-parameters), 2.1) | windowed | `none` | `align-vector.v1.json` | yes | yes |
 | `segment.threshold` | `series` → `series` | `direction`, `enter`, `exit` (hysteresis: `exit` not beyond `enter`), `pre`, `post`, `minDuration`, `maxDuration` (`Segmenter.java:92-95`) | keyed (series) | `exact` for segment counts, `sum` | `segment-threshold.v1.json` | yes | yes |
 | `segment.extremum` | `series` → `series` | `feature`, `prominence` ≥ 0, `window`, `distance`, `pre`, `post` (`Segmenter.java:69-72`) | keyed (series) | `exact` for segment counts, `sum` | `segment-extremum.v1.json` | yes | yes |
 | `sax.word` | `series` → `series` (fills `EpisodeSummary.sax`) | `w` ≥ 1, `a` in the range of `Sax.breakpoints` (`Sax.java:16`) | none | `none` | `sax-word.v1.json` | yes | yes |
-| `pair.xcorr` | `series`, `series` → `series` | `lags` integer in [0, 1073741823] (Java array bound); pair settings `pairing`, `window`, `step`, `every`, `agg`, `maxAge`, `minCoverage` (`pairs.ts:78-88`) | windowed | `none` | `pair-xcorr.v1.json` | yes | short windows only (S1.8) |
+| `pair.xcorr` | `series`, `series` → `series` | `lags` integer in [0, 1073741823] (Java array bound); pair settings `pairing`, `window`, `step`, `every`, `agg`, `fill` (`none` or `as-of`; any other value is refused with `pair fill must be none or as-of`), `maxAge`, `minCoverage` (`pairs.ts:75-91`) | windowed | `none` | `pair-xcorr.v1.json` | yes | short windows only (S1.8) |
 | `pair.es` | `series`, `series` → `series` | finite `sigma`; `tauMax` ≥ 0 seconds, zero uncapped; `shuffles` integer in [1, 2147483647]; finite integer `seed`; shared pair settings (`es.ts`; `pair-es.v1.json`) | windowed | `none` | `pair-es.v1.json` | yes | no |
 | `dq.result` | `stats` → `events` | `checks` ⊆ `DataQuality.Check` values, expectation `min`, `max`, `expectedInterval` (`DataQuality.java:29-38`) | none | `exact` for counts per check and status, `sum` | `dq-result.v1.json` | yes | yes |
 
@@ -173,6 +173,10 @@ Catalog pair descriptions use text for `window`: `episode` or a positive
 decimal width in seconds, matching workbench text-field serialization.
 The direct pair APIs also accept numeric widths. `step` and `every` default
 to zero, selecting the window width and inferred sample clock respectively.
+The inferred clock of a pair range is the larger sampling interval of its two
+episodes, the median spacing of their sample times in epoch microseconds
+divided by 1e6, in the workbench, Wayang and the Rust runner
+(`pair-clock.v1.json`).
 
 `TsxStreamEqualsBatchTest` covers 65 shared numerical cases in chunks of 1,
 7 and all input records, in both series orders: 61 native cases and four
@@ -330,7 +334,7 @@ whole-topic ownership or the signed fleet requirements in S5/S7.
 | Ambiguity | A send error or interruption can leave an unknown broker outcome. Retain `publishing`/`uncertain`, refuse retransmission and block replacement/retirement for that group. A lost HTTP reply after durable `acknowledged` returns the cached receipt without Kafka I/O. Never infer absence from a missing reply. |
 | Terminal recovery | Persist verified execution results and the adopted gateway epoch before reloading authority for retirement. Bounded retries reuse the persisted result and retry the same durable retirement operation without another execute call. Continuous Stop persists its verified cycle and epoch before retirement. Publish terminal state and release ownership only after confirmed retirement. |
 | Ledger | Use one checksummed atomic `opentsx.publication-ledger.v1` envelope, fsynced file/directory updates and an exclusive process lock. Directories are `0700`; private files are `0600`. Corruption, missing initialized state, a second owner or storage failure rejects work. Reuse the same private directory after restart. |
-| Capacity | Retain at most 64 deployment groups, 64 operation receipts and 256 request entries. The serialized ledger envelope is at most 4,194,304 bytes. Driver control HTTP bodies are capped at 1,048,576 bytes, independently of the 32,768-byte original DAG limit. The publication HTTP body is separately capped at 85,000,000 bytes. Each active group reserves one operation slot for retirement: recorded operations plus active groups MUST NOT exceed 64. Admission/switching preserve that reserve. Capacity is fail-closed, not an eviction or tenant-quota policy. |
+| Capacity | Retain at most 64 deployment groups, 64 operation receipts and 256 request entries. The serialized ledger envelope is at most 4,194,304 bytes. Driver control HTTP bodies are capped at 1,048,576 bytes, independently of the 32,768-byte limit the UI rollout applies to an original DAG. The publication HTTP body is separately capped at 85,000,000 bytes. Each active group reserves one operation slot for retirement: recorded operations plus active groups MUST NOT exceed 64. Admission/switching preserve that reserve. Capacity is fail-closed, not an eviction or tenant-quota policy. |
 
 The authenticated owner route `POST /api/v1/dags/wayang-rust/deployments/{id}/replace` accepts a canonical
 `expectedEpoch` and `mode`, either `resume` or `restart`. Resume accepts no replacement flow/DAG fields.
@@ -391,6 +395,14 @@ With context, `limits.series` is at most 1,024 and `limits.samples` at most
 legacy profile retains its 64-series and 100,000-sample ceilings, three clean
 operations and trailing-resample restriction. Neither profile silently widens
 the caller's declared limits.
+
+A worker the operator starts with `serve --profile measurement` raises these
+ceilings for the B4.2 board measurement: 16,384 series and 4,000,000 samples with
+or without context, 100,000 records, 64 MiB of input and output, 256 MiB of state
+and a 4,390,912-byte request that can carry a full shared assignment. A request
+MUST NOT select or widen the profile, and the worker MUST still refuse every
+declared limit above it. Replay, signed runs and the default `standard` profile
+keep the ceilings above.
 
 Parameters, defaults and output semantics follow the existing processor
 descriptions. The adapter validates graph shape, typed edges, bound inventories,

@@ -1,7 +1,7 @@
 /**
  * "Publish as clean signal": makes the selected step of the flow the source of the clean grade of the signal the
  * workbench was opened for. One step instead of three (publish, save, deploy): it says what will happen, what the
- * processor can run, and where the data goes. Concept: docs/datamodel-2026/14-ENGINEERING-FLOW.md, section 8.3.
+ * processor can run, and where the data goes. Spec: docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md, section 8.4.
  */
 
 import { useEffect, useState } from 'react';

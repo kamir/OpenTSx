@@ -28,8 +28,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * Runs of a twin on request, and the register that keeps them (docs/datamodel-2026/16-DEMO-UND-SIMULATIONSEXPERTEN.md,
- * section 4, points 1 and 2). A run takes the plan and the inputs of the scenario of a system, the decisions of a
+ * Runs of a twin on request, and the register that keeps them. A run takes the plan and the inputs of the scenario of a system, the decisions of a
  * person (interventions on controls, a policy for an atom), and gives back a run with an identity: its events, its
  * KPIs and its series can be read again by that identity, and two runs can be compared.
  *

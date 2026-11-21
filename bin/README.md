@@ -12,4 +12,4 @@
 | `run_all_tests.sh` | runs Maven exercise regressions; full mode also checks demo syntax and required docs |
 
 Tests for the current modules run with `mvn verify` and `pytest` (see the [user manual, chapter 12](../docs/user-manual/12-operations.md)).
-Obsolete scripts (Kudu, Spark 2, Cloudera deployment) are in `archive/bin/`.
+Obsolete scripts (Kudu, Spark 2, Cloudera deployment) were removed; their last state is the tag `v3.0.1`.

@@ -239,7 +239,7 @@ public final class Systems {
             for (String grade : SystemDoc.GRADES) {
                 Source src = s.source(grade);
                 if (src == null) {
-                    // not declared in the document, but a flow may write it: the data is found by its tags (D42: the
+                    // not declared in the document, but a flow may write it: the data is found by its tags (SYSTEM-DOCUMENT-SPEC.md, section 4.4: the
                     // workbench publishes a clean signal without changing the document)
                     JsonNode written = grade.equals("raw") ? null : find(d, s, grade, null, inventory, running.get());
                     if (written != null) {
@@ -402,7 +402,11 @@ public final class Systems {
         };
     }
 
-    /** The origin of the data: declared at a topic or a manual value, synthetic for a generator, the worst input for a flow. */
+    /**
+     * The origin of the data: declared at a topic or a manual value, synthetic for a generator. A flow computes a
+     * signal, so it is what the signal expects (an estimate from measured wind is no measurement), but never better
+     * than the worst input: made of generated data it stays synthetic.
+     */
     private static Origin origin(Signal s, Map<String, Signal> byId, Map<String, Flow> flows, Set<String> visiting) {
         if (s.raw() != null && s.raw().origin() != null) {
             return parse(s.raw().origin());
@@ -418,7 +422,7 @@ public final class Systems {
                 worst = Origin.worst(worst, origin(in, byId, flows, visiting));
             }
         }
-        return worst;
+        return Origin.worst(worst, s.expect().origin() == null ? null : parse(s.expect().origin()));
     }
 
     private static Origin parse(String name) {
@@ -480,7 +484,7 @@ public final class Systems {
 
     /**
      * What the inventory holds for one grade of a signal, or null when it holds nothing. A topic source is matched by
-     * metric and tags; a generator or a flow writes by rule (concept, section 6.1) with the tags system and signal.
+     * metric and tags; a generator or a flow writes by rule (docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md, section 4) with the tags system and signal.
      */
     private static JsonNode find(SystemDoc d, Signal s, String grade, Source src, JsonNode inventory, java.util.Set<String> running) {
         boolean byTopic = src != null && "topic".equals(src.kind());

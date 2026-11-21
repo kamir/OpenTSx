@@ -10,7 +10,7 @@ from app.db.base_class import Base
 class SignalBinding(Base):
     """
     The source of one grade of one signal, set by one user. It lies over the system document of the repository until
-    it is written into the file (docs/datamodel-2026/14-ENGINEERING-FLOW.md, decision D42).
+    it is written into the file (docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md, section 7).
     """
 
     __tablename__ = "signal_bindings"
@@ -23,7 +23,7 @@ class SignalBinding(Base):
     grade = Column(String, nullable=False)
     # the source as in signals[].<grade>.source of opentsx.system.v1
     source = Column(JSON, nullable=False)
-    # the person confirmed that the bound data is the quantity the signal means (decision D53)
+    # the person confirmed that the bound data is the quantity the signal means (docs/datamodel-2026/DECISION-CARD-SPEC.md, section 4.2)
     meaning_confirmed = Column(Boolean, nullable=False, default=False)
     # hash of the system document the binding was made against
     base_hash = Column(String, nullable=True)

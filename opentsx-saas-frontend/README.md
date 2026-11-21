@@ -111,20 +111,28 @@ Read the [analysis guide](../docs/devguide/workbench-analysis.md) for the result
 - Ground truth: the scenario events of series loaded from the inventory are drawn as bands on the time axis
   (yellow: operation, red: sensor fault); the field "Ground truth" jumps to an event
 - Align to vector: several nodes on one clock, one measuring point per tick (`opentsx.vector.v1`, a draft;
-  `src/workbench/vector.ts`)
+  `src/workbench/vector.ts`). A stored flow whose `fill` is not `none` or `as-of` opens, but its preview fails with
+  `vector fill must be none or as-of` and the deploy checks list `<label>: vector fill must be none or as-of.`
 - Pair windows (tab "Multi-variate Analysis"): a pair method compares two series window by window, paired by their
   episode ranges, one result per window at its centre; "Pair coverage" shows what the methods will see,
   "Cross-correlation" gives the peak of the lagged cross-correlation, its lag and link strength (`src/workbench/xcorr.ts`,
   ported from WikiExplorer.NG), "Event synchronisation" the share of synchronous events and the level of chance
-  (`src/workbench/es.ts`, ported from the Python package). Workbench only, not in the stream operator catalog (`src/workbench/pairs.ts`, design in
-  `../EVOLUTION/TASK-015-multivariate-analysis.md`)
+  (`src/workbench/es.ts`, ported from the Python package). With clock 0 each pair range takes the larger sampling
+  interval of its two episodes, as Wayang and the Rust runner do (shared cases:
+  `../docs/datamodel-2026/testvectors/pair-clock.v1.json`). A `fill` other than `none` or `as-of` is refused with
+  `pair fill must be none or as-of`. A series whose times are not in increasing order is refused with
+  `<label> has times out of order. A pair method needs them in increasing order.`, where `<label>` is the label of
+  the series. Workbench only, not in the stream operator catalog (`src/workbench/pairs.ts`, design in
+  `../docs/datamodel-2026/PAIR-WINDOWS-SPEC.md`)
 - Deploy and Stop (tab "Smart Topic"): a list says what a deployment still needs, "Create a vector of the loaded
   series" builds the one thing the processor runs, and Deploy hands the flow to the vector processor, which keeps the vector topic up to
   date, and shows what it reports; needs an administrator account, a retrieval server started with `--kafscale` and
-  `--dag-runs true`, and a running vector processor
+  `--dag-runs true`, and a running vector processor. A separate list shows the Track A and B jobs of `GET /v1/dags`
+  with job id, track, site, state, input record count and report age. It has no Stop: those jobs do not read the
+  control topic
 - Time series operations as buttons, recorded as a processing flow graph
 - Export: `opentsx.dag.v1` Smart Topic definition, Processing Flow Descriptor, Java code
-- Code in `src/workbench/`; limits in `../EVOLUTION/TASK-013-web-workbench.md`
+- Code in `src/workbench/`
 
 ### State Management
 

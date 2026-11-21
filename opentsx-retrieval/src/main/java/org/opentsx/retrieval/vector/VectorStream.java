@@ -15,7 +15,7 @@ import java.util.TreeSet;
 
 /**
  * {@code align.vector} for data that keeps arriving: the measuring points of {@link VectorAligner}, handed out as
- * soon as they are final. Rules: docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md, section 5b.
+ * soon as they are final. Rules: docs/datamodel-2026/VECTOR-AND-DAG-SPEC.md, section 3.2.
  *
  * <ul>
  *   <li><b>Series arrive in time order.</b> Per series, a block of samples must begin at or after the end of the

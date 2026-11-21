@@ -1471,7 +1471,10 @@
       ],
       "pitfalls": [
         "A low-coverage item stays on the regular output grid as a gap.",
-        "Coverage measures available overlap, not statistical dependence."
+        "Coverage measures available overlap, not statistical dependence.",
+        "Without an explicit clock each pair range takes the larger sampling interval of its two episodes, so the ranges of one pair can run on different clocks.",
+        "A fill other than none or as-of is refused with the message \"pair fill must be none or as-of\".",
+        "A series whose times are not in increasing order is refused with the message \"<label> has times out of order. A pair method needs them in increasing order.\""
       ],
       "parameterKeys": [
         "pairing",
@@ -1524,7 +1527,9 @@
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
           "opentsx-saas-frontend/src/workbench/pairs.test.ts"
         ],
-        "vectors": []
+        "vectors": [
+          "docs/datamodel-2026/testvectors/pair-clock.v1.json"
+        ]
       }
     },
     {
@@ -1547,7 +1552,8 @@
         "Delay B and inspect the positive lag convention that means B follows A.",
         "Resolve pair.xcorr version 1 in the frozen inventory and compare the referenced native Wayang regression with the browser workload.",
         "Inspect the window text field and YAML exporter; keep catalog window values as text while recognizing numeric seconds in direct pair APIs.",
-        "Run the shared Rust alignment or cross-correlation cases with restored state; for pair.xcorr also check the configured product budget and exact refusal message."
+        "Run the shared Rust alignment or cross-correlation cases with restored state; for pair.xcorr also check the configured product budget and exact refusal message.",
+        "Run the timestamped cases of pair-clock.v1.json in the workbench, Wayang and the Rust runner and check the clock of each pair range against the larger sampling interval of its two episodes."
       ],
       "starter": {
         "bucket": {
@@ -1628,7 +1634,10 @@
         "A single searched lag has undefined strength because there is no spread.",
         "A local Java catalog plan remains separate from deployment through an admitted runtime profile.",
         "Rust catalog execution has its own admitted local profile. The signed B1 run profile remains pass-through only; numerical parity does not grant fleet execution rights.",
-        "Track B admits only cross-correlation windows within the explicit site product budget. It does not offer pair.es."
+        "Track B admits only cross-correlation windows within the explicit site product budget. It does not offer pair.es.",
+        "Without an explicit clock each pair range takes the larger sampling interval of its two episodes, so the ranges of one pair can run on different clocks.",
+        "A fill other than none or as-of is refused with the message \"pair fill must be none or as-of\".",
+        "A series whose times are not in increasing order is refused with the message \"<label> has times out of order. A pair method needs them in increasing order.\""
       ],
       "parameterKeys": [
         "pairing",
@@ -1705,10 +1714,13 @@
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxPairVectorsTest.java#everySharedCaseMatchesThroughAWayangPlan",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStreamEqualsBatchTest.java#everyVectorCaseMatchesInSixChunkAndSeriesOrders",
           "rust/tsx-runner/tests/pair_vector_vectors.rs",
-          "rust/tsx-runner/tests/catalog_flow.rs"
+          "rust/tsx-runner/tests/catalog_flow.rs",
+          "opentsx-saas-frontend/src/workbench/pairs.test.ts",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxPairClockVectorsTest.java#everyCaseMatchesThroughAWayangPlan"
         ],
         "vectors": [
-          "docs/datamodel-2026/testvectors/pair-xcorr.v1.json"
+          "docs/datamodel-2026/testvectors/pair-xcorr.v1.json",
+          "docs/datamodel-2026/testvectors/pair-clock.v1.json"
         ]
       }
     },
@@ -1732,7 +1744,8 @@
         "Observe that shuffling the single inter-event interval cannot change this two-event control.",
         "Inspect the four shared sampled-series cases through TsxPair, including state restored between B and a later A increment.",
         "Compare largeSeedsUseTheSameUnsigned32BitStateAsTheWorkbench and settingsLabelsKeepWorkbenchNumberFormatting with the workbench settings.",
-        "Resolve pair.es version 1 in the frozen inventory and explain why local Java compilation remains separate from remote deployment admission."
+        "Resolve pair.es version 1 in the frozen inventory and explain why local Java compilation remains separate from remote deployment admission.",
+        "Run the timestamped pair.es cases of pair-clock.v1.json in the workbench and Wayang; the Rust runner has no pair.es."
       ],
       "starter": {
         "bucket": {
@@ -1810,7 +1823,10 @@
         "A large q_total alone does not prove coupling when q_rand is equally large.",
         "First and last samples cannot be detected local-maximum events.",
         "The frozen pair.es entry identifies native Wayang availability; local Java compilation does not establish a deployed UI runtime binding.",
-        "A large whole-number seed must wrap to the unsigned 32-bit random state without changing its settings label."
+        "A large whole-number seed must wrap to the unsigned 32-bit random state without changing its settings label.",
+        "Without an explicit clock each pair range takes the larger sampling interval of its two episodes, so the ranges of one pair can run on different clocks.",
+        "A fill other than none or as-of is refused with the message \"pair fill must be none or as-of\".",
+        "A series whose times are not in increasing order is refused with the message \"<label> has times out of order. A pair method needs them in increasing order.\""
       ],
       "parameterKeys": [
         "pairing",
@@ -1900,10 +1916,13 @@
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxPairEsWayangTest.java#largeSeedsUseTheSameUnsigned32BitStateAsTheWorkbench",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxPairEsWayangTest.java#settingsLabelsKeepWorkbenchNumberFormatting",
           "opentsx-retrieval/src/test/java/org/opentsx/retrieval/system/SystemDocTest.java#catalogOneMatchesSpecAndProcessorDescriptions",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStreamEqualsBatchTest.java#everyVectorCaseMatchesInSixChunkAndSeriesOrders"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStreamEqualsBatchTest.java#everyVectorCaseMatchesInSixChunkAndSeriesOrders",
+          "opentsx-saas-frontend/src/workbench/pairs.test.ts",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxPairClockVectorsTest.java#everyCaseMatchesThroughAWayangPlan"
         ],
         "vectors": [
-          "docs/datamodel-2026/testvectors/pair-es.v1.json"
+          "docs/datamodel-2026/testvectors/pair-es.v1.json",
+          "docs/datamodel-2026/testvectors/pair-clock.v1.json"
         ]
       }
     },
@@ -2289,7 +2308,7 @@
         "Load the synthetic bucket and set every starter parameter explicitly."
       ],
       "tasks": [
-        "Calculate 0*1.8+32 and 100*1.8+32.",
+        "Calculate `0*1.8+32` and `100*1.8+32`.",
         "Run the conversion and inspect the degF series unit.",
         "Explain why relabeling a series without the numeric conversion would be wrong.",
         "Trace a captured old publication grant through the local gateway refusal, then distinguish same-DAG state-preserving resume from changed-DAG replay into a fresh output.",
@@ -2342,7 +2361,7 @@
         "Worker capability discovery keeps the four legacy operators in operators; catalogExecution.operators lists B2 operations and does not extend Java UI admission.",
         "The embedded Rust WASM module is a separate execution path from this browser workload. Its ABI uses separate binary64 multiplication and addition.",
         "Plans cannot supply WASM code, module paths, URLs or resource-limit overrides. The module has no host imports and a trap has no native conversion fallback.",
-        "WASM availability does not extend signed B1 pass-through or signed B3 statistics admission. Physical ARM64 and ARMv7 B4.2 measurements and physical ARMv7 B1.2 acceptance remain open."
+        "WASM availability does not extend signed B1 pass-through or signed B3 statistics admission. The physical ARM64 B4.2 measurement remains open. D-T14 requires native x86_64 and ARM64 CI for B1.2; ARMv7 is not hardware-qualified."
       ],
       "parameterKeys": [
         "factor",
@@ -2422,7 +2441,8 @@
           "rust/tsx-runner/tests/clean_catalog.rs",
           "rust/tsx-runner/tests/worker_service.rs#capability_discovery_preserves_legacy_admission_and_reports_b2_separately",
           "rust/tsx-runner/src/wasm.rs#wasm_limits",
-          "rust/tsx-runner/tests/wasm_operator.rs"
+          "rust/tsx-runner/tests/wasm_operator.rs",
+          "tools/test_operator_exercise_sync.py#test_conversion_formulas_are_copyable_from_the_generated_lesson"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/clean-ops.v1.json"
@@ -3484,7 +3504,8 @@
       "pitfalls": [
         "Both inputs must carry a time axis.",
         "Lateness configures the running processor and does not delay this batch apply call.",
-        "Rust catalog execution has its own admitted local profile. The signed B1 run profile remains pass-through only; numerical parity does not grant fleet execution rights."
+        "Rust catalog execution has its own admitted local profile. The signed B1 run profile remains pass-through only; numerical parity does not grant fleet execution rights.",
+        "A missing fill is none. A fill other than none or as-of, such as asof, is refused with the message \"vector fill must be none or as-of\", as the Rust runner and the vector processor refuse it."
       ],
       "parameterKeys": [
         "every",
@@ -3546,10 +3567,12 @@
         ],
         "spec": [
           "docs/learning/ui-operator-contracts.md#align-vector",
-          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1"
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1",
+          "docs/datamodel-2026/VECTOR-AND-DAG-SPEC.md"
         ],
         "source": [
           "opentsx-saas-frontend/src/workbench/vector.ts#alignVector",
+          "opentsx-saas-frontend/src/workbench/vector.ts#fillsAsOf",
           "rust/tsx-runner/src/pairs.rs",
           "rust/tsx-runner/src/catalog.rs",
           "systems/processors/align.vector.yaml"
@@ -3558,7 +3581,9 @@
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
           "opentsx-saas-frontend/src/workbench/vector.test.ts",
           "rust/tsx-runner/tests/pair_vector_vectors.rs",
-          "rust/tsx-runner/tests/catalog_flow.rs"
+          "rust/tsx-runner/tests/catalog_flow.rs",
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/vector/VectorJobTest.java#refusesAFillOtherThanNoneOrAsOfAsTheRustRunnerDoes",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/DagToWayangErrorsTest.java#message16RejectsAnUnknownEnumValue"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/align-vector.v1.json"

@@ -235,7 +235,7 @@ describe('loaders', () => {
     expect(Number.isNaN(b.series[0].y[3])).toBe(true);
   });
 
-  it('keeps the range of every episode, sorted by series and start (TASK-015 phase 1a)', () => {
+  it('keeps the range of every episode, sorted by series and start (docs/datamodel-2026/PAIR-WINDOWS-SPEC.md, section 1)', () => {
     const t0 = Date.parse('2026-10-01T00:00:00Z') * 1000;
     const b = parseEpisodes([
       { episodeId: 'b2', seriesId: 'b', tStart: '2026-10-01T00:10:00Z', tEnd: '2026-10-01T00:20:00Z',

@@ -2,7 +2,7 @@
  * The place "Models": the decisions of the system and what each of their analyses may claim today. A decision card
  * says which signals the decision needs and what makes each fit for this purpose; the server puts the state of the
  * signals next to it. What is missing blocks exactly the analyses that need it; clean inputs alone prove nothing,
- * so an analysis without evidence stays restricted (docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md, D59).
+ * so an analysis without evidence stays restricted (docs/datamodel-2026/DECISION-CARD-SPEC.md, section 2).
  */
 
 import { Link } from 'react-router-dom';

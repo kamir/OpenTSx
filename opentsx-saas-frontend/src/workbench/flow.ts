@@ -504,8 +504,11 @@ function dagParams(nodes: FlowNode[], node: FlowNode, seconds = false): Params |
   }
   if (node.op === VECTOR_OP) {
     const p = node.params;
-    const fill = (p.fill === 'as-of' ? `, fill: as-of, maxAge: PT${p.maxAge}S` : '') + (Number(p.lateness) > 0 ? `, lateness: PT${p.lateness}S` : '');
-    return `{ every: PT${p.every}S, key: ${p.key}, agg: ${p.agg}${fill}, emit: ${p.emit}, names: [${vectorComponents(nodes, node).join(', ')}] }`;
+    const fill = String(p.fill ?? 'none');
+    // An unknown fill is written as stored: validate() blocks its export and every runtime refuses it.
+    const extra = (fill === 'as-of' ? `, fill: as-of, maxAge: PT${p.maxAge}S` : fill === 'none' ? '' : `, fill: ${yamlScalar(fill)}`)
+      + (Number(p.lateness) > 0 ? `, lateness: PT${p.lateness}S` : '');
+    return `{ every: PT${p.every}S, key: ${p.key}, agg: ${p.agg}${extra}, emit: ${p.emit}, names: [${vectorComponents(nodes, node).join(', ')}] }`;
   }
   return node.params;
 }
@@ -515,7 +518,7 @@ export interface Finding {
   text: string;
 }
 
-// ---------------------------------------------------------------- clean signals (docs/datamodel-2026/14, section 6)
+// ---------------------------------------------------------------- clean signals (docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md, sections 4 and 5)
 
 /** Operators the processor runs before a series sink; everything else computes in the workbench only. */
 export const CLEAN_OPS = PROCESSOR_SERIES_OPS;
@@ -684,6 +687,9 @@ export function validate(nodes: FlowNode[]): Finding[] {
     if (n.op === VECTOR_OP && inputsOf(n).length < 2) {
       out.push({ level: 'warning', text: `${n.label} has one input only. Add further inputs: each becomes a component of the vector.` });
     }
+    if (n.op === VECTOR_OP && !['none', 'as-of'].includes(String(n.params.fill ?? 'none'))) {
+      out.push({ level: 'error', text: `${n.label}: vector fill must be none or as-of.` });
+    }
   }
   const used = new Set<string>();
   for (const s of sinks) for (const n of upstream(nodes, s.id)) used.add(n.id);
@@ -694,14 +700,14 @@ export function validate(nodes: FlowNode[]): Finding[] {
   return out;
 }
 
-/** The flow as opentsx.dag.v1 (docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md, section 5). */
+/** The flow as opentsx.dag.v1 (docs/datamodel-2026/VECTOR-AND-DAG-SPEC.md, section 1). */
 export function toDagYaml(s: FlowDoc): string {
   const sinks = s.nodes.filter((n) => n.sinkTopic);
   const keep = new Set<string>();
   for (const sink of sinks) for (const n of upstream(s.nodes, sink.id)) keep.add(n.id);
   // Without a sink the whole flow is written, so the draft can be read.
   const nodes = s.nodes.filter((n) => n.op !== 'source' && (sinks.length === 0 || keep.has(n.id)));
-  // a series sink makes the document an opentsx.dag.v2 (docs/datamodel-2026/14, section 6.3)
+  // a series sink makes the document an opentsx.dag.v2 (docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md, section 5.1)
   const series = sinks.filter((n) => isCleanSink(n) && s.context);
   const toSeries = new Set<string>();
   for (const sink of series) for (const n of upstream(s.nodes, sink.id)) toSeries.add(n.id);

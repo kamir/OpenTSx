@@ -1,6 +1,6 @@
 # Inspect bounded mixed Java and Rust federation
 
-Inspect the B4 acceptance harness for OpenTSx 3.0.1 and `tsx-runner` 0.1.0;
+Inspect the B4 acceptance harness for OpenTSx 3.1.0 and `tsx-runner` 0.1.0;
 execution results belong to the retained run evidence.
 
 You need the source-built KafScale v1.6.0 broker, Proxy and isolated cluster
@@ -91,9 +91,9 @@ fleets, production enrollment or independent remote hardware.
 
 [`wayang_board_evaluation.py`](../../../tools/wayang_board_evaluation.py) prepares
 the fixed baseline (c) matrix and validates supplied evidence integrity. It does
-not execute or attest physical measurements. Under D-T14 the matrix contains one
-ARM64 board, Java 17, Java 21 and Rust, 100/1,000/10,000 series, and three
-repetitions: 27 conditions. Each condition retains the protocol's
+not execute or attest physical measurements. Under D-T14 and D-T15 the matrix
+contains one ARM64 board, the pass-through, clean and statistics chains, Java 17,
+Java 21 and Rust, 100/1,000/10,000 series, and three repetitions: 81 conditions. Each condition retains the protocol's
 5-minute warm-up and 30-minute measurement with one-second resource samples.
 Read [concept 20, section 14.2](../../datamodel-2026/20-WAYANG-TS-OPERATORS.md#142-compare-track-b-and-track-a-on-small-hardware)
 for the measurement requirements.

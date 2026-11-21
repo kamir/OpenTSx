@@ -67,7 +67,7 @@ take on these roles:
 
 | Today | Planned role |
 |-------|--------------|
-| `Flow` (JSON definition, owner, status) | **smart series specification**: the versioned YAML of a Smart Topic ([design](../datamodel-2026/05-SMART-TOPICS.md)), owned by a user or team |
+| `Flow` (JSON definition, owner, status) | **smart series specification**: the versioned YAML of a Smart Topic (design), owned by a user or team |
 | `FlowExecution` | training runs and deployments (MLflow run ids, champion version, processor status) |
 | `FlinkService` | a general **runner**: statistics processor, Smart Topic scoring processor, Python training job |
 | dashboard | "my series": smart metrics, model quality and drift, data-quality results, prediction with or without context |
@@ -79,10 +79,10 @@ model updates to the global model (the Wayang approach in the Smart Topic design
 The same control plane would steer **system reconstruction, simulation and optimization** (phase P8). It would
 connect sources, trigger reconstruction runs, compare simulation scenarios, and submit optimization instances to
 classical solvers or, as an experiment, to quantum backends. The concept is in
-[06-SYSTEMREKONSTRUKTION-OPTIMIERUNG](../datamodel-2026/06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md) (German).
+06-SYSTEMREKONSTRUKTION-OPTIMIERUNG (German).
 
 It would also host the **digital twin** of an energy system (phase P9): operators review optimizer proposals and
 play their own decisions through the twin before releasing them. The concept is in
-[07-DIGITAL-TWIN-BSP](../datamodel-2026/07-DIGITAL-TWIN-BSP.md) (German).
+[TWIN-COUPLING-SPEC §9](../datamodel-2026/TWIN-COUPLING-SPEC.md#9-operating-modes).
 
 This is a proposal; it is tracked in the roadmap ([chapter 15](15-roadmap.md)).

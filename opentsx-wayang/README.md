@@ -292,8 +292,10 @@ cross-runtime binary64 boundary, zero-bucket and collapsed-tail cases without
 changing shared vectors. Retained run evidence establishes acceptance; the
 harness alone does not. General mixed continuous fleets and production rollout
 remain separate. The physical ARM64 B4.2 measurement is open (D-T14: ARM64 only);
-[the board tool](../tools/wayang_board_evaluation.py) prepares and validates
-supplied evidence rather than executing measurements.
+[the board tool](../tools/wayang_board_evaluation.py)
+prepares 81 unassigned conditions across pass-through, clean and statistics
+chains (D-T15) and validates supplied evidence rather than executing
+measurements.
 
 These integration classes use the existing `KAFSCALE_BOOTSTRAP` test switch and
 require `KAFSCALE_BROKER_BINARY`, `KAFSCALE_PROXY_BINARY` and `KAFSCALE_CLUSTER_BINARY`
@@ -418,7 +420,9 @@ input `a` and those of B with input `b` (`TsxTagged`). Every series of `a` is co
 `pairing` `same` pairs episodes with equal ranges, `intersect` overlapping episodes on their intersection. Each pair
 range gives one episode per field, series `pair.<method>.<field>` with the tags `a`, `b`, `window` and `step`, parent
 the episode of A. An episode waits in `TsxState` until every series of the other input has passed its end. Without
-`every` the clock is the larger sampling interval of the two paired episodes.
+`every` the clock is the larger sampling interval of the two paired episodes, as in the workbench and the Rust runner
+(`TsxPairClockVectorsTest` runs `docs/datamodel-2026/testvectors/pair-clock.v1.json`). A `fill` other than `none` or
+`as-of` is refused with `pair fill must be none or as-of`.
 
 ```java
 TsxPair xcorr = new TsxPair("x", "pair.xcorr", Map.of("lags", 5, "window", 32, "step", 8),
@@ -523,6 +527,38 @@ for the command, metric definitions and isolation limits. The generated
 identifies the hardware, versions, exact commands and raw samples. Produce ingress
 clocks measure transport latency; Kafka record timestamps retain event time.
 These measurements cover A1.7, not the broader throughput or Track B matrix.
+
+## Drive the B4.2 board workload
+
+`org.opentsx.wayang.board.BoardWorkload` drives one condition of the B4.2 board
+measurement (TASK-020, D-T15). It writes JSON lines to standard output.
+
+| Command | Does |
+| --- | --- |
+| `feed` | Writes the paced feed: one sample per series and second, one episode of 10 samples per series every 10 seconds, staggered over the 10 seconds. Event times and values depend only on `--series`, `--seed` and the block, so every run of one size writes the same records. |
+| `digest` | Prints the SHA-256 of the feed, the condition's `inputSha256`, without a broker. |
+| `track-a` | Runs the chain's DAG on Wayang in this JVM, in increments, through `DagToWayang.incrementPlan`. |
+| `track-b` | Starts `tsx-runner serve --profile measurement` and sends it one `opentsx.local-increment.v1` request per interval over the new input. |
+
+`BoardChains` builds one DAG per chain, the same text for both tracks:
+`passthrough` writes the episodes to `tsx.<domain>.synthetic.v2`, `clean` runs
+`dq.checks` and `resample PT1M` into `tsx.<domain>.clean.v2`, and `stats` runs
+`stats.welford-ddsketch` with one-minute windows into
+`tsx.<domain>.series-stats.v2`. With `--lag-file`, `track-a` and `track-b` write
+the run's lag (input records minus processed records) to that file twice per
+second for `tools/board_lag.py`. The `started` event carries the process id to
+sample (the JVM for Track A, `tsx-runner` for Track B). `firstFetch` is written
+when the first increment over a non-empty input range starts, and `firstOutput`
+when the end offsets of the output topic first grow, polled every 100 ms.
+`BoardWorkloadIntegrationTest` runs every chain on both tracks over the same feed
+and checks the timings and that both tracks write exactly the reference records
+of the feed. `BoardOutputProofTest` is the output proof of one measured
+condition: it compares the condition's output topic with `BoardReference`, the
+chain run once over the whole feed without a broker, through
+`BoardOutputs.compare`, and only then writes the JUnit XML the board validator
+reads.
+The [Jetson runbook](../docs/devguide/integration/wayang-board-jetson.md#run-one-condition)
+has the commands for one condition.
 
 ## Dependencies
 

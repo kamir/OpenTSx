@@ -234,9 +234,10 @@ Status of A3.2 on 2026-11-16, JDK 21: `TsxPairVectorsTest` runs all 5 shared
 (peak of largest magnitude, as `xcorr.ts`), the same 5 with B in a later
 increment, a repeated delivery, and `intersect` pairing (12 tests, 0
 failures). An episode waits in `TsxState` until every series of the other
-input has passed its end. One difference to the workbench: without `every`
-the clock is the larger sampling interval of the two paired episodes, not of
-the two whole series, because a continuing input has no whole series.
+input has passed its end. Without `every` the clock is the larger sampling
+interval of the two paired episodes, because a continuing input has no whole
+series. The workbench and the Rust runner take the same clock; the timestamped
+cases of `pair-clock.v1.json` check it.
 
 
 | # | Criterion | Proof | Data | Pass |
@@ -508,9 +509,9 @@ series inventory. ARMv7 runs under QEMU only, as a supplementary check (D-T14).
   identities, all partials/windows and separate numerical-domain cases.
 - [ ] B4.2: measure baseline (c) on one physical Linux ARM64 board (D-T14). The
   [Jetson runbook](../docs/devguide/integration/wayang-board-jetson.md) prepares a
-  Jetson Nano 4 GB for the 27 conditions.
+  Jetson Nano 4 GB for the 81 conditions (D-T15).
   The measurement remains open. The preparation tool
-  defines 27 unassigned conditions and validates supplied evidence integrity;
+  defines 81 unassigned conditions and validates supplied evidence integrity;
   it does not execute measurements or establish hardware acceptance.
 
 | # | Criterion | Proof | Data | Pass |
@@ -525,7 +526,7 @@ retain source/runtime hashes and the exact executed JUnit methods:
 | # | Result |
 |---|---|
 | B4.1 | met for bounded W3 on the signal-cluster route: `FederatedStatsIntegrationTest.everyActualMixedW3WindowMatchesCentralizedAndAllSixMergeOrders` executes Java `s1`/`s2` and actual Rust CLI `s3`, 3,600 Episodes, 2,160,000 values, 1,260 partials, 420 final windows, 30 conformance checks and 2,520 canonical-merge byte comparisons. Exact counts/extrema/lastSeen pass; maximum relative mean error is `1.7308017671758118e-14`, M2 `2.7235050829345894e-12`, within unchanged `3e-12`. `MixedSketchQualificationTest` executes 58 cases and 348 mixed arrival-order comparisons, including 42 gamma-boundary, six zero-threshold and four collapsed-tail cases. |
-| B4.2 | open for one physical ARM64 board (D-T14). `wayang_board_evaluation.py` emits the unassigned 27-condition matrix; its 24 deterministic tests validate evidence completeness and association only and refuse ARMv7 or AArch32 boards. `board_identity.py` and `board_resource_sampler.py` record the board and the one-second samples in the validator's formats (10 tests). No physical RSS, CPU, startup or throughput result is claimed. |
+| B4.2 | open for one physical ARM64 board (D-T14). `wayang_board_evaluation.py` emits the unassigned 81-condition matrix of three chains (D-T15); its 26 deterministic tests validate evidence completeness and association only and refuse ARMv7 or AArch32 boards. `board_identity.py` and `board_resource_sampler.py` record the board and the one-second samples in the validator's formats (10 tests). `BoardWorkload` in `opentsx-wayang` drives one condition: paced feed, Track A or Track B, process id, first fetch and first output (`BoardWorkloadTest`, `BoardWorkloadIntegrationTest`). `BoardOutputProofTest` writes the output proof of one condition: the run equals, series by series, a prefix of the reference output of the same feed, field for field; the board validator accepts the proof file. `board_lag.py` prints the lag that `BoardWorkload --lag-file` writes twice per second, for the sampler's `--lag-command` (3 tests). No physical RSS, CPU, startup or throughput result is claimed. |
 
 Six arrival orders use one canonical site fold; they do not establish floating-point
 associativity. The Java-only test and shared sketch bytes remain exact. On this
@@ -562,7 +563,7 @@ Status on 2026-11-20, Rust 1.99.1 and JDK 21:
   conversion cases, all 16 checkpointed input partitions and 49 refused
   code/limit-field placements. The 14 `wasm_limits` tests also pass.
 
-All 346 runner tests and three shared-contract tests pass without failures,
+All 351 runner tests and three shared-contract tests pass without failures,
 ignored or filtered cases. The artifact qualification parser requires every
 one of the 19 B5 test names in native and supplementary ARMv7 QEMU logs.
 The physical ARM64 B4.2 measurement remains open; D-T14 requires no ARMv7
@@ -588,6 +589,7 @@ Criteria per milestone: A0 5, A1 7, A2 6, A3 6, A4 9, A5 2, B1 6, B2 3, B3 4, B4
 | D-T12 | Where `opentsx-wayang` lives | module in this repository; separate repository | module in this repository: it reuses five OpenTSx modules | as recommended, owner, 2026-11-16 |
 | D-T13 | FPGA kernels on raw sensor data (Tier 3) | kernels behind the Rust runner, data reduction only; a separate FPGA track reached from Wayang; not admitted, results enter as `MEASURED` edge metrics | behind the Rust runner, data reduction only: the runner keeps transport, framing, keyed state and checkpoints; see qualification below | as recommended, owner, 2026-11-20 |
 | D-T14 | ARMv7 hardware for B1.2 and B4.2 | physical ARMv7 board; ARMv7 userland on an ARMv8 core (AArch32); no ARMv7 hardware, ARM64 only | ARM64 only: no planned target is 32-bit (the orbit work and the space boards of the research studies are 64-bit). B1.2 is met by the native x86_64 and ARM64 CI jobs; B4.2 is measured on one physical ARM64 board, a Jetson Nano 4 GB. The `armv7-unknown-linux-musleabihf` artifact stays built and QEMU-tested but is not hardware-qualified. A 32-bit run on an ARMv8 board (a pi-top with 32-bit Raspberry Pi OS) is optional and is reported as AArch32 compatibility mode, never as B1.2 or B4.2 | as recommended, owner, 2026-11-20 |
+| D-T15 | Workload of the B4.2 matrix | pass-through only; pass-through, clean and statistics chains; recorded replay; paced live feed | all three chains (pass-through, `clean` with `dq.checks` and `resample`, `stats.welford-ddsketch`) on a paced live feed of one sample per series and second from the KafScale host: 81 conditions, about 47 hours. Track B runs 10,000 series under the worker profile `serve --profile measurement`; the shared assignment allows 524,288-byte DAG texts for the source inventory | owner, 2026-11-20 |
 
 D-T2 compares a fixed relative bound with per-data-set measurement in A4.5.
 The owner approved relative `3e-12` for bounded W3 `mean` and `m2` on
@@ -601,7 +603,7 @@ CLI site. No bound is established for arbitrary data or other mixed workloads.
 ### D-T13: admit FPGA kernels as Tier 3
 
 Accepted by the owner on 2026-11-20 with all seven points as recommended. Evidence and design are in the study
-[`02-WAYANG-FPGA-OPERATORS-FOR-SPACE.md`](../docs/research/02-WAYANG-FPGA-OPERATORS-FOR-SPACE.md).
+`02-WAYANG-FPGA-OPERATORS-FOR-SPACE.md`.
 
 **Question.** May the catalog admit operator versions that execute as FPGA kernels on raw sensor data, below the
 Rust runner on an onboard computer?
@@ -609,8 +611,8 @@ Rust runner on an onboard computer?
 **Why it is asked.**
 
 - Concept 09 places FPGA work outside OpenTSx. Its row "Timed Loop, Real-Time, FPGA" reads "not a task of OpenTSx;
-  clock 1 min, supervisory" (`docs/datamodel-2026/09-STUDIO-LABVIEW-STEUERPULT.md:130`). RMS, peaks and spectra per
-  run belong to the device, which publishes them as `MEASURED` edge metrics (`09:163-165`). Real-time and safety
+  clock 1 min, supervisory". RMS, peaks and spectra per
+  run belong to the device, which publishes them as `MEASURED` edge metrics. Real-time and safety
   stay at the device (`09:174`). D-T13 changes that boundary for data reduction only.
 - Raw rates exceed the downlink. An illustrative 1,000-channel, 1 kHz, 16-bit feed produces about 173 GB per day,
   about 460 times what one S-band ground station downlinks. Per-minute window statistics of the same feed need 144

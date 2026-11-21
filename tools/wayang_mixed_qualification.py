@@ -330,7 +330,7 @@ def provenance(root, sketch):
             "cpuCount": os.cpu_count(), "toolchains": versions, "commands": commands,
             "executionHost": {field: sketch.get(field) for field in ("osName", "osArch", "javaVersion")},
             "kafScaleFixturePin": {"version": "1.6.0", "commit": FEDERATION.LATENCY.KAFSCALE_COMMIT},
-            "kafScaleBinaries": binaries, "physicalLinuxBoardAcceptance": False, "armv7HardwareAcceptance": "open"}
+            "kafScaleBinaries": binaries, "physicalLinuxBoardAcceptance": False, "armv7HardwareAcceptance": "not-required"}
 
 
 def report(snapshot, metadata, mixed, sketch):

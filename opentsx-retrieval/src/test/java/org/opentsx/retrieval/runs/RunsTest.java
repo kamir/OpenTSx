@@ -167,8 +167,13 @@ class RunsTest {
         assertThrows(NoSuchElementException.class, () -> runs.doc("h2-chain", "h2-chain-0000"));
     }
 
-    /** The state of three signals and their series, as a server holds them: price and potential measured, demand generated. */
+    /** The state of three signals and their series, as a server holds them: price reported, potential estimated, demand generated. */
     static SignalInputs.Source signalsOfTheNight() {
+        return signalsOfTheNight("ESTIMATED");
+    }
+
+    /** As {@link #signalsOfTheNight()}, with the origin the series of the potential names. */
+    static SignalInputs.Source signalsOfTheNight(String potentialData) {
         long t0 = java.time.Instant.parse("2025-10-01T00:00:00Z").toEpochMilli() * 1000;
         long min = 60_000_000L;
         org.opentsx.model.v2.SeriesKey price = org.opentsx.model.SeriesKeys.of("market.price.day_ahead", java.util.Map.of("area", "DE-LU"), "EUR/MWh");
@@ -189,11 +194,11 @@ class RunsTest {
         String status = """
                 {"signals":[
                  {"id":"market.price_eur_mwh","origin":"REPORTED","grades":{"raw":{"source":{"kind":"topic"},"data":{"series":["%s"],"intervalMicros":900000000,"origin":"REPORTED"}}}},
-                 {"id":"park.p_potential_kw","origin":"MEASURED","grades":{"clean":{"source":{"kind":"flow"},"data":{"series":["%s"],"intervalMicros":600000000,"origin":"ESTIMATED","madeOf":"park/DWD-01759/wind_speed@clean (MEASURED)"}}}},
+                 {"id":"park.p_potential_kw","origin":"ESTIMATED","grades":{"clean":{"source":{"kind":"flow"},"data":{"series":["%s"],"intervalMicros":600000000,"origin":"%s","madeOf":"park/DWD-01759/wind_speed@clean (MEASURED)"}}}},
                  {"id":"offtake.demand_kgph","origin":"SYNTHETIC","grades":{"raw":{"source":{"kind":"generator"},"data":{"series":["%s"],"intervalMicros":60000000,"origin":"SYNTHETIC","fidelity":"demo"}}}},
                  {"id":"ely.setpoint_kw","origin":"REPORTED","grades":{"raw":{"source":{"kind":"manual","value":5000,"origin":"REPORTED"}}}},
                  {"id":"marketer.schedule_kw","grades":{}}
-                ]}""".formatted(price.getSeriesId(), wind.getSeriesId(), demand.getSeriesId());
+                ]}""".formatted(price.getSeriesId(), wind.getSeriesId(), potentialData, demand.getSeriesId());
         return new SignalInputs.Source() {
             @Override
             public JsonNode signals(String system, JsonNode bindings) {
@@ -245,6 +250,18 @@ class RunsTest {
         JsonNode gen = runs.series("h2-chain", run.path("run").asText(), List.of("park.p_gen_kw")).path("series").path("park.p_gen_kw").path("values");
         assertEquals(9000.0, gen.get(10).asDouble(), 1e-9);
         assertThrows(IllegalArgumentException.class, () -> runs.run("h2-chain", body("{\"inputs\":\"signals\",\"from\":70}")));
+    }
+
+    @Test
+    void theOriginTheSeriesNamesCountsBeforeThatOfTheSignal() throws Exception {
+        Runs runs = Runs.standard();
+        // the signal is an estimate; the flow that wrote its series says it wrote a forecast
+        runs.signals(signalsOfTheNight("FORECAST"));
+        JsonNode potential = null;
+        for (JsonNode in : runs.run("h2-chain", body("{\"inputs\":\"signals\"}")).path("inputs")) {
+            potential = in.path("port").asText().equals("park.p_potential_kw") ? in : potential;
+        }
+        assertEquals("FORECAST", potential.path("origin").asText());
     }
 
     @Test

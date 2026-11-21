@@ -11,4 +11,4 @@ bin/build_docs_pdfs.sh           # directly; writes target/OpenTSx-User-Manual.p
 The script uses `honkit` (or the legacy `gitbook` CLI) and Calibre's `ebook-convert`, both inside the Docker image.
 To preview the manual as HTML, run `npx honkit serve docs/user-manual`.
 
-The previous Pandoc-based script (`build_manual_pdf.sh`) and the old notes are in `archive/`.
+The previous Pandoc-based script (`build_manual_pdf.sh`) and the old notes were removed; their last state is the tag `v3.0.1`.
