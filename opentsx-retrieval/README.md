@@ -157,6 +157,25 @@ In `systems/h2-chain.system.yaml`, `park.p_potential_kw` is `ESTIMATED`: a power
 mvn -B -ntp -pl opentsx-retrieval -am test -Dtest='SystemsTest,DecisionsTest' -Dsurefire.failIfNoSpecifiedTests=false
 ```
 
+### Status of a decision
+
+With `--systems`, `GET /v1/systems/{id}/decisions` gives every analysis of a decision card the status `usable`,
+`restricted` or `blocked`, with `reasons`. The rules are in
+[DECISION-CARD-SPEC.md, section 2](../docs/datamodel-2026/DECISION-CARD-SPEC.md#2-decision-status).
+
+The server does not evaluate two limits a card can state. An analysis is at best `restricted` when:
+
+* A need that applies to it states `maxQuestionable`. The reason is
+  `<signal>: the share of questionable values is not evaluated by this server`.
+* It states `uncertainty.blockAbove`. The reason is `the width of the uncertainty is not evaluated by this server`.
+
+The need itself keeps `ok: true` when every check that ran passed. In `systems/decisions/h2-dispatch.decision.yaml`,
+`price-following` states `blockAbove: 500` and lists the second reason last. From the repository root, run:
+
+```bash
+mvn -B -ntp -pl opentsx-retrieval -am test -Dtest=DecisionsTest -Dsurefire.failIfNoSpecifiedTests=false
+```
+
 ### Check a generator source
 
 With `--systems`, the server checks every generator source when it loads a system document. Each of these adds one
