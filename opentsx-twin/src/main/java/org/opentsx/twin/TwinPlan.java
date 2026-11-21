@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * The wiring plan ("Schaltplan") of a twin: atoms from the catalog, their parameters and policies, and wires
+ * The wiring plan of a twin: atoms from the catalog, their parameters and policies, and wires
  * {@code "fromAtom.port -> toAtom.port"}. Standard parts, individual wiring per site.
  */
 public record TwinPlan(String twin, Instant start, Duration baseStep, int steps, List<AtomSpec> atoms,

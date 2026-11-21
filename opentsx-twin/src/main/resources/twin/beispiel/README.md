@@ -5,7 +5,7 @@ available.
 
 | File | Content |
 |------|---------|
-| `haus-abrechnungen-simuliert.csv` | billing lines 2022 to 2025 in the format of the template `../abrechnungen-vorlage.csv`; every line is marked `SIMULIERT` in `notiz` |
+| `haus-abrechnungen-simuliert.csv` | billing lines 2022 to 2025 in the format of the template `../abrechnungen-vorlage.csv`; every line is marked `SIMULATED` in `notiz` |
 | `haus-tagesmittel-simuliert.csv` | daily mean temperatures 2022 to 2025 (`datum,t_mittel_c`) of a fictitious site in the Erzgebirge (about 650 m) |
 
 ## How the files were made
