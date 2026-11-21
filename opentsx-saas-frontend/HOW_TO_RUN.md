@@ -163,7 +163,7 @@ opentsx-saas-frontend/
 - **Axios** - HTTP client
 - **React Flow 11** - Visual flow builder
 - **Tailwind CSS 3** - Utility-first CSS
-- **Plotly.js** - Interactive charts
+- **Browser Canvas and SVG** - Oscilloscope and analysis charts
 
 ---
 

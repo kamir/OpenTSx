@@ -316,33 +316,9 @@ npm install
 yarn install
 ```
 
-**package.json dependencies:**
-```json
-{
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^6.21.0",
-    "reactflow": "^11.10.4",
-    "plotly.js": "^2.28.0",
-    "react-plotly.js": "^2.6.0",
-    "zustand": "^4.4.7",
-    "axios": "^1.6.5",
-    "socket.io-client": "^4.6.1",
-    "@tanstack/react-query": "^5.17.9"
-  },
-  "devDependencies": {
-    "@types/react": "^18.2.47",
-    "@types/react-dom": "^18.2.18",
-    "@vitejs/plugin-react": "^4.2.1",
-    "typescript": "^5.3.3",
-    "vite": "^5.0.11",
-    "tailwindcss": "^3.4.1",
-    "autoprefixer": "^10.4.16",
-    "postcss": "^8.4.33"
-  }
-}
-```
+The frontend dependencies and pinned development inputs are declared in
+[`package.json`](../../opentsx-saas-frontend/package.json); `npm ci` installs
+the exact graph from its committed lockfile.
 
 ### 3. Environment Configuration
 
