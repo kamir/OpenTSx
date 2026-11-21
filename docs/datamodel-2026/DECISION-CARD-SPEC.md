@@ -497,8 +497,15 @@ states its `fidelity`:
   it is at best `restricted` ([section 2.3](#23-evaluate-an-analysis)). A twin run on the series of the signals takes
   such an input as `SYNTHETIC`, keeps the run `restricted` and gives the reason
   `generated, not measured: <ports>; the run shows the mechanism, not an effect`.
+* The comparison of two runs (`opentsx.run-compare.v1`) ranks no KPI when an input of either run has the origin
+  `SYNTHETIC`. Every KPI keeps `base`, `run` and `delta` and has no `verdict`. `reasons` holds
+  `generated, not measured: <ports>; no KPI is ranked better or worse`, where `<ports>` lists those inputs of the
+  base, then of the run, each once. Otherwise `reasons` is empty and every KPI has a `verdict`. The place "Simulate"
+  shows `reasons` above the table of KPIs and colours no difference without a `verdict`.
 
 Implemented in: `processor.v1:172-178`, `systems/processors/gen.ou.yaml:6`, `systems/processors/gen.sine.yaml:6`,
 `Generators.java:17-22`, `Generators.java:64-71`, `Generators.java:178-186`, `TopicLayout.java:173-176`,
-`TopicLayout.java:204-206`, `KafScaleFeed.java:171-172`, `Decisions.java:144-145`, `Decisions.java:175-177`,
-`SignalInputs.java:98-99`, `Runs.java:360`, `Runs.java:376`.
+`TopicLayout.java:204-206`, `KafScaleFeed.java:173-174`, `Decisions.java:144-145`, `Decisions.java:175-177`,
+`SignalInputs.java:98-99`, `Runs.java:359`, `Runs.java:370-373`, `Runs.java:462`, `Runs.java:470-473`,
+`Runs.java:484-488`, `Runs.java:512-526`, `runs.ts:172-173`, `SimulatePlace.tsx:225-229`,
+`SimulatePlace.tsx:242`, `RunsTest.java:275-309`.

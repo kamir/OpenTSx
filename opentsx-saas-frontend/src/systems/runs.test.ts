@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chartLines, clockOf, deltaText, eventText, kpiText, minuteOf, runRequest } from './runs';
+import { KpiRow, chartLines, clockOf, deltaText, eventText, kpiText, minuteOf, runRequest } from './runs';
 
 const scenario = {
   steps: 360,
@@ -46,12 +46,20 @@ describe('asking the twin', () => {
   it('writes figures, differences and events for a person', () => {
     expect(kpiText(17446.4, 0, 'kWh')).toBe('17,446 kWh');
     expect(kpiText(NaN, 1, 'kg')).toBe('n/a');
-    expect(deltaText({ delta: -1, decimals: 0, unit: '', verdict: 'better' })).toBe('-1');
-    expect(deltaText({ delta: 312.9, decimals: 1, unit: 'kg', verdict: 'better' })).toBe('+312.9 kg');
-    expect(deltaText({ delta: 0, decimals: 1, unit: 'kg', verdict: 'same' })).toBe('');
+    expect(deltaText({ delta: -1, decimals: 0, unit: '' })).toBe('-1');
+    expect(deltaText({ delta: 312.9, decimals: 1, unit: 'kg' })).toBe('+312.9 kg');
+    expect(deltaText({ delta: 0, decimals: 1, unit: 'kg' })).toBe('');
     expect(eventText({ type: 'protective_shutdown', atom: 'ely', attrs: { p_bar: '200.084' } })).toBe('the electrolyser shuts down to protect itself (200 bar)');
     expect(eventText({ type: 'intervention', atom: 'handover', attrs: { control: 'valve', value: '0.0', reason: 'valve closed' } })).toBe('handover.valve set to 0.0 (valve closed)');
     expect(eventText({ type: 'something_new', atom: 'x', attrs: {} })).toBe('something new');
+  });
+
+  it('writes no sign for two runs that agree, ranked or not', () => {
+    const unranked: KpiRow = { key: 'park.curtailed_rules_kwh', label: 'curtailed', unit: 'kWh', decimals: 0, better: -1, base: 3000, run: 3000, delta: 0 };
+    const ranked: KpiRow = { ...unranked, verdict: 'same' };
+    expect(deltaText(unranked)).toBe('');
+    expect(deltaText(ranked)).toBe('');
+    expect(deltaText({ ...unranked, delta: -50 })).toBe('-50 kWh');
   });
 
   it('draws lines with gaps, inside the range of values and limits', () => {

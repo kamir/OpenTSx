@@ -157,6 +157,22 @@ In `systems/h2-chain.system.yaml`, `park.p_potential_kw` is `ESTIMATED`: a power
 mvn -B -ntp -pl opentsx-retrieval -am test -Dtest='SystemsTest,DecisionsTest' -Dsurefire.failIfNoSpecifiedTests=false
 ```
 
+### Compare two runs of a twin
+
+With `--systems`, `GET /v1/systems/{id}/runs/{run}/compare?base=<run>` puts two runs of the twin of a system next to
+each other. Every KPI of the scenario has `base`, `run` and `delta`, the run minus the base. By the direction the
+scenario gives the KPI, its `verdict` is `better`, `worse` or `same`.
+
+No KPI gets a `verdict` when an input of either run has the origin `SYNTHETIC`: a demo generator, or data made of
+generated data. The KPIs keep `delta`, and `reasons` holds
+`generated, not measured: <ports>; no KPI is ranked better or worse`. Otherwise `reasons` is empty. The rule is in
+[`DECISION-CARD-SPEC.md`, section 6](../docs/datamodel-2026/DECISION-CARD-SPEC.md#6-demo-generators-and-scenario-models).
+From the repository root, run:
+
+```bash
+mvn -B -ntp -pl opentsx-retrieval -am test -Dtest=RunsTest -Dsurefire.failIfNoSpecifiedTests=false
+```
+
 ### Vector topics
 
 With `--kafscale` the server also reads the vector topics of the domain (`tsx.<domain>.smart.<name>.vectors.v1`,

@@ -593,6 +593,12 @@ entries before 3.0.0 are grouped by date.
 
 ### Fixed
 
+- `GET /v1/systems/{id}/runs/{run}/compare` ranks no KPI when an input of either run has the origin `SYNTHETIC`,
+  as `DECISION-CARD-SPEC.md` section 6 requires. The KPIs keep `delta` and have no `verdict`; the new field `reasons`
+  holds `generated, not measured: <ports>; no KPI is ranked better or worse` and is empty otherwise. A run on a demo
+  demand was compared with its baseline as `better` or `worse`. The place "Simulate" shows the reason above the
+  table and colours no difference without a verdict; a difference of zero without a verdict shows as empty instead
+  of `-0`. A Python caller of `RetrievalClient.compare` that reads `verdict` must handle its absence.
 - `docs/datamodel-2026/measurements/rust-b4-mixed-20261120/REPORT.md` has the bytes its `manifest.json` pins again;
   the repository split had replaced its links to the raw files with plain text. `tools/check_links.py` leaves files
   that a measurement manifest pins out, and `tools/test_measurement_records.py` fails when a committed file differs
