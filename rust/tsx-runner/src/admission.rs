@@ -243,6 +243,9 @@ fn admit_with_caps(
     tsx_contracts::validate(&request.assignment_text).map_err(str::to_string)?;
     let assignment = tsx_contracts::parse_json(&request.assignment_text, profile.assignment_bytes)
         .map_err(str::to_string)?;
+    if assignment.get("outputs").is_some() {
+        return Err("assignment outputs are not executed by this runtime yet (D-T21)".into());
+    }
     if assignment["runtime"] != "rust" || assignment["mode"] != "bounded" {
         return Err("local replay requires a bounded Rust assignment".into());
     }

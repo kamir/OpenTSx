@@ -99,6 +99,29 @@ mod tests {
         }
     }
 
+    /// D-T21: a signed site plan whose assignment declares outputs is refused until runtimes write them.
+    #[test]
+    fn a_site_plan_with_assignment_outputs_is_refused() {
+        let fixture = Fixture::new();
+        let mut document = fixture.plan.document().clone();
+        let mut assignment: Value =
+            serde_json::from_str(document["assignmentText"].as_str().unwrap()).unwrap();
+        assignment["outputs"] = json!([{"binding":"site","topic":"tsx.b3test.repartition.flow.vector.v2",
+            "partitionCount":"1","port":"out","kind":"repartition"}]);
+        document["assignmentText"] = json!(assignment.to_string());
+        let error = BoundedPlan::verify(
+            &fixture.sign_document(&document),
+            &fixture.config,
+            "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        )
+        .err()
+        .expect("refused");
+        assert!(
+            format!("{error:?}").contains("not executed by this runtime yet"),
+            "{error:?}"
+        );
+    }
+
     /// TASK-020 U01 membership: a node belongs to one site, so expected membership may not list it for two sites.
     #[test]
     fn expected_membership_refuses_one_node_for_two_sites() {
@@ -521,6 +544,11 @@ impl BoundedPlan {
         let assignment_text = text_field(&document, "assignmentText")?;
         tsx_contracts::validate(assignment_text).map_err(invalid)?;
         let assignment = tsx_contracts::parse_json(assignment_text, 65_536).map_err(invalid)?;
+        if assignment.get("outputs").is_some() {
+            return Err(invalid(
+                "assignment outputs are not executed by this runtime yet (D-T21)",
+            ));
+        }
         if assignment["site"] != config.site() || assignment["node"] != config.node() {
             return Err(Refusal::new(
                 "plan.site",
