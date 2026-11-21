@@ -1,0 +1,21 @@
+{
+  "type": "record",
+  "name": "AnalysisResult",
+  "namespace": "org.opentsx.model.v2",
+  "doc": "Result of one run of an analysis method on fixed input episodes, e.g. DFA on one series or event synchronization over n series. resultId = lower-case hex of xxHash64 (seed 0) over the canonical form of method, methodVersion, params and inputEpisodeIds: the same method with the same parameters on the same episodes gets the same id.",
+  "fields": [
+    {"name": "resultId", "type": "string"},
+    {"name": "method", "type": "string", "doc": "e.g. dfa, mfdfa, es, ris."},
+    {"name": "methodVersion", "type": "string"},
+    {"name": "params", "type": {"type": "map", "values": ["long", "double", "string", {"type": "array", "items": "double"}]}, "default": {}, "doc": "Typed parameters, written in UTF-8 key order. Part of the identity."},
+    {"name": "inputEpisodeIds", "type": {"type": "array", "items": "string"}, "doc": "Ordered. Part of the identity."},
+    {"name": "inputSeriesIds", "type": {"type": "array", "items": "string"}, "doc": "Series of each input episode, same order and length as inputEpisodeIds."},
+    {"name": "tStart", "type": {"type": "long", "logicalType": "timestamp-micros"}, "doc": "Earliest tStart of the inputs."},
+    {"name": "tEnd", "type": {"type": "long", "logicalType": "timestamp-micros"}, "doc": "Latest tEnd of the inputs, exclusive."},
+    {"name": "scalars", "type": {"type": "array", "items": "ResultScalar"}, "default": []},
+    {"name": "curves", "type": {"type": "array", "items": "ResultCurve"}, "default": []},
+    {"name": "matrices", "type": {"type": "array", "items": "ResultMatrix"}, "default": []},
+    {"name": "labels", "type": {"type": "map", "values": "string"}, "default": {}},
+    {"name": "provenance", "type": "Provenance"}
+  ]
+}

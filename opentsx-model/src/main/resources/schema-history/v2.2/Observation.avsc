@@ -1,0 +1,12 @@
+{
+  "type": "record",
+  "name": "Observation",
+  "namespace": "org.opentsx.model.v2",
+  "doc": "A single live data point. The series identity is resolved via seriesId (dimension topic / table).",
+  "fields": [
+    {"name": "seriesId", "type": "string"},
+    {"name": "ts", "type": {"type": "long", "logicalType": "timestamp-micros"}},
+    {"name": "value", "type": "double"},
+    {"name": "quality", "type": ["null", "int"], "default": null}
+  ]
+}

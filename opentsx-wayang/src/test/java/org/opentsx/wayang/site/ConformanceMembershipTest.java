@@ -72,6 +72,18 @@ class ConformanceMembershipTest {
         assertEquals("series.disjoint", refusedCheck(unsorted));
     }
 
+    /** D-T17: a site has exactly one node; its qualified pin cannot name a second node. */
+    @Test void aSiteKeepsTheOneNodeOfItsQualifiedPin(@org.junit.jupiter.api.io.TempDir java.nio.file.Path directory) throws Exception {
+        var driver = SiteTestData.key();
+        try (var service = new TsxPlanService(driver.getPublic(), java.util.Map.of("s1", SiteTestData.key().getPublic()),
+                java.util.Map.of("c".repeat(64), "s1"), directory, SiteTestData.CLOCK, (plan, value) -> { }, (plan, value) -> { })) {
+            service.registerQualifiedRuntime("s1", "node-s1", "3.0.0", SiteTestData.DIGEST, SiteTestData.ABI);
+            service.registerQualifiedRuntime("s1", "node-s1", "3.0.0", SiteTestData.DIGEST, SiteTestData.ABI);
+            assertEquals("a runtime pin cannot change while the service is running", assertThrows(IllegalArgumentException.class,
+                    () -> service.registerQualifiedRuntime("s1", "node-s2", "3.0.0", SiteTestData.DIGEST, SiteTestData.ABI)).getMessage());
+        }
+    }
+
     @Test void expectedMembershipNamesEachNodeForOneSiteOnly() {
         ObjectNode document = SiteTestData.document("wind", 1, "s1");
         ObjectNode other = ((ObjectNode) document.path("federation").path("expectedAssignments").get(0)).deepCopy();

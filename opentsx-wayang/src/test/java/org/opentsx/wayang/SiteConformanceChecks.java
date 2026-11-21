@@ -247,7 +247,7 @@ public final class SiteConformanceChecks {
             try (URLClassLoader loader = new URLClassLoader(new java.net.URL[]{classes.toUri().toURL(),
                     root.resolve("opentsx-model/src/test/resources").toUri().toURL()}, SiteConformanceChecks.class.getClassLoader())) {
                 for (var entry : Map.of("org.opentsx.model.EpisodesAndWireFormatTest", List.of("fingerprintsMatchPython", "episodesEncodeToTheSameBytesAsPython", "observationEncodesToTheSameBytesAsPython"),
-                        "org.opentsx.model.AnalysisResultTest", List.of("analysisResultsEncodeToTheSameBytesAsPython")).entrySet()) {
+                        "org.opentsx.model.AnalysisResultTest", List.of("analysisResultsEncodeToTheSameBytesAsPython", "payloadsWrittenWithV21DecodeWithoutDigestsAndKeepTheirIds")).entrySet()) {
                     Class<?> type = loader.loadClass(entry.getKey());
                     var constructor = type.getDeclaredConstructor(); constructor.setAccessible(true);
                     Object instance = constructor.newInstance();
@@ -261,7 +261,8 @@ public final class SiteConformanceChecks {
                 for (Path path : files.sorted(Comparator.reverseOrder()).toList()) Files.delete(path);
             }
         }
-        int records = vectors.path("episodes").size() + 1 + vectors.path("analysisResults").size();
+        JsonNode results = JSON.readTree(root.resolve("opentsx-model/src/test/resources/testvectors/analysis-result-wire.json").toFile());
+        int records = vectors.path("episodes").size() + 1 + vectors.path("analysisResults").size() + results.path("analysisResults").size();
         return records + " shared single-object wire records and all schema fingerprints checked";
     }
 

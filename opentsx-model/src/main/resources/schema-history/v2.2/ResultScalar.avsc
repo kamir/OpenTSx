@@ -1,0 +1,14 @@
+{
+  "type": "record",
+  "name": "ResultScalar",
+  "namespace": "org.opentsx.model.v2",
+  "doc": "One number of an analysis result, e.g. the DFA exponent alpha fitted over a scale range.",
+  "fields": [
+    {"name": "name", "type": "string", "doc": "e.g. alpha, r_squared, Q, gamma."},
+    {"name": "value", "type": "double"},
+    {"name": "stdError", "type": ["null", "double"], "default": null},
+    {"name": "unit", "type": ["null", "string"], "default": null},
+    {"name": "fitFrom", "type": ["null", "double"], "default": null, "doc": "Lower end of the range of the independent variable the value was fitted over, e.g. the smallest DFA scale."},
+    {"name": "fitTo", "type": ["null", "double"], "default": null, "doc": "Upper end of that range."}
+  ]
+}
