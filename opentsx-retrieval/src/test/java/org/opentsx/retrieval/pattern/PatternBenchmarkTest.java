@@ -51,7 +51,7 @@ class PatternBenchmarkTest {
         return wind;
     }
 
-    /** Success criterion 7 of TASK-011 (D87): 10 planted gusts, the top 10 of similarTo with z-ED, recall at least 0.95. */
+    /** Pattern benchmark: 10 planted gusts, the top 10 of similarTo with z-ED, recall at least 0.95. */
     @Test
     void recallAtTenMeetsTheSuccessCriterion() {
         double[] shape = PatternEngineTest.gust(90);

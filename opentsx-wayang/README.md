@@ -304,6 +304,19 @@ The fixture starts four independent clusters, each with private etcd metadata, a
 broker and a Proxy endpoint. Producers use the Proxy. Read the
 [bundle instructions](../opentsx-kafscale-conformance/README.md#build-the-pinned-transport-bundle).
 
+The fixture starts the clusters one after another. Each gets a newly reserved loopback port as
+`--listen 127.0.0.1:<port>` and writes `<cluster>.log` in the fixture's `brokers/` directory. A cluster is ready
+only when its own log shows `msg="proxy listening" addr=127.0.0.1:<port>` and
+`broker listening on 127.0.0.1:<broker-port>`, its process still runs and the port accepts a connection.
+An answer on the port alone does not count, because another process can take a released port.
+A cluster whose log shows `bind: address already in use` is stopped and started on a new port.
+Attempt `<n>` after the first writes `<cluster>.<n>.log` and keeps its etcd state in `<cluster>.<n>-state`.
+After five lost ports the fixture fails with
+`disposable cluster <cluster> lost its listener port in 5 attempts; inspect <log>`.
+Any other exit fails at once with `disposable cluster <cluster> exited; inspect <log>`.
+A cluster whose log does not show both listener lines within 30 seconds fails with
+`disposable cluster <cluster> did not report its Proxy and broker listeners within 30 seconds; inspect <log>`.
+
 The JUnit fixtures use unique directories under `opentsx-wayang/target/federation-test-logs/` with
 `ON_SUCCESS` cleanup. A fixture-construction, test or broker-shutdown failure retains the directory;
 successful tests delete it. The [CI diagnostic artifacts](../docs/user-manual/12-operations.md#124-testing-and-ci)
@@ -328,8 +341,8 @@ execution. Its result directory contains `bytes.csv`, `windows.csv`, `run.json`,
 `metadata.json`, logs and a generated `REPORT.md`. Results are written from the
 executed workload and validated before report generation.
 
-The [A4.9 report and raw samples](../docs/datamodel-2026/measurements/wayang-federation-2026-11-17/REPORT.md)
-record nine site/route measurements, 420 reference windows and 2,520 exact
+The [A4.9 report](../docs/datamodel-2026/measurements/wayang-federation-2026-11-17/REPORT.md)
+records nine site/route measurements, 420 reference windows and 2,520 exact
 merge-order comparisons. Use the
 [measurement instructions](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS.md#143-measure-bounded-jvm-federation)
 to rerun the bounded profile. Kafka frames, HTTP bodies and TLS client-stream
@@ -371,8 +384,8 @@ applies no performance threshold. Its backlog results remain distinct from
 the [paced A1.7 measurements](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS.md#141-measure-track-a-increments),
 the 30-kill recovery protocol and the Track B small-device matrix.
 
-The [A5 report and raw samples](../docs/datamodel-2026/measurements/wayang-track-a-evaluation-2026-11-18/REPORT.md)
-record the complete 63-condition run on 2026-11-18. All nine federation
+The [A5 report](../docs/datamodel-2026/measurements/wayang-track-a-evaluation-2026-11-18/REPORT.md)
+records the complete 63-condition run on 2026-11-18. All nine federation
 conditions and all 54 streaming conditions passed their received-record,
 reference, checkpoint and clock checks. Federation retains 3,780 window
 comparisons, 17,640 partials and 126 site/route byte rows. This qualification
@@ -401,7 +414,9 @@ incremental saved state. These Java execution modes do not add DAG parameters.
 inputs, so mark every input with its name (`TsxTagged`) and join the inputs with `UnionAllOperator`. Give the operator
 the series ids of every input. Series of an input the operator does not know are ignored. The operator keeps open ticks
 in `TsxState`; set `flush` only for a complete input. `TsxVectorSink` writes the `opentsx.vector.v1` records to a vector
-topic, key = canonical text of the vector key, and returns after every record is acknowledged.
+topic, key = canonical text of the vector key, and returns after every record is acknowledged. `DagToWayang.compile`
+refuses an `align.vector` node whose inputs share a name with
+`node <id>: two inputs of the vector are both named "<name>"; give every input its own name`.
 
 ```java
 MapOperator<SpecificRecord, TsxTagged> tag = new MapOperator<>(r -> new TsxTagged("raw", (Episode) r),
@@ -524,7 +539,7 @@ run sequentially with a fresh JVM and disposable in-memory KafScale broker.
 Read the [operations instructions](../docs/user-manual/12-operations.md#127-measure-wayang-increment-latency)
 for the command, metric definitions and isolation limits. The generated
 [measurement report](../docs/datamodel-2026/measurements/wayang-increment-latency-2026-11-17/REPORT.md)
-identifies the hardware, versions, exact commands and raw samples. Produce ingress
+identifies the hardware, versions and exact commands; the raw samples are not in this repository. Produce ingress
 clocks measure transport latency; Kafka record timestamps retain event time.
 These measurements cover A1.7, not the broader throughput or Track B matrix.
 
@@ -651,5 +666,5 @@ regenerate all five files. You need JDK 17 or 21, Maven, and Python.
 The generator is verified with JDK 21 and Python 3.12 on 2026-11-16.
 
 The [bounded mixed W3 report](../docs/datamodel-2026/measurements/rust-b4-mixed-20261120/REPORT.md)
-retains actual per-window and per-partial data, source/runtime identities and
-executed test evidence. The physical ARM64 board measurement remains open.
+records source/runtime identities and executed test evidence; its manifest lists the SHA-256 of the per-window and
+per-partial raw files, which are not in this repository. The physical ARM64 board measurement remains open.

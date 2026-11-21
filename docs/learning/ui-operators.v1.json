@@ -3503,6 +3503,8 @@
       ],
       "pitfalls": [
         "Both inputs must carry a time axis.",
+        "Two series that give the same component of one vector are refused, as the vector processor refuses them; choose a key that tells them apart.",
+        "Two inputs with one name, such as names \"speed,Speed\", are refused with the message 'two inputs of the vector are both named \"speed\"; give every input its own name', as the vector processor, Wayang and the Rust runner refuse them. A typed name is written in lower-case snake case: lower case, every run of characters other than a-z and 0-9 becomes _, and _ at either end is dropped. A typed name is never renamed, so two typed names with the same snake-case name are refused. A name derived from a bucket name gets _2 when another input has it.",
         "Lateness configures the running processor and does not delay this batch apply call.",
         "Rust catalog execution has its own admitted local profile. The signed B1 run profile remains pass-through only; numerical parity does not grant fleet execution rights.",
         "A missing fill is none. A fill other than none or as-of, such as asof, is refused with the message \"vector fill must be none or as-of\", as the Rust runner and the vector processor refuse it."
@@ -3575,11 +3577,17 @@
           "opentsx-saas-frontend/src/workbench/vector.ts#fillsAsOf",
           "rust/tsx-runner/src/pairs.rs",
           "rust/tsx-runner/src/catalog.rs",
+          "opentsx-saas-frontend/src/workbench/vector.ts#inputNameClash",
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/vector/VectorAligner.java#inputNameClash",
           "systems/processors/align.vector.yaml"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
           "opentsx-saas-frontend/src/workbench/vector.test.ts",
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/vector/VectorAlignerTest.java#refusesTwoInputsWithOneNameAsTheStreamDoes",
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/vector/VectorJobTest.java#refusesTwoInputsWithOneName",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/DagToWayangErrorsTest.java#refusesTwoVectorInputsWithOneNameWhenItCompiles",
+          "rust/tsx-runner/tests/catalog_admission.rs#alignment_refuses_two_inputs_with_one_name",
           "rust/tsx-runner/tests/pair_vector_vectors.rs",
           "rust/tsx-runner/tests/catalog_flow.rs",
           "opentsx-retrieval/src/test/java/org/opentsx/retrieval/vector/VectorJobTest.java#refusesAFillOtherThanNoneOrAsOfAsTheRustRunnerDoes",

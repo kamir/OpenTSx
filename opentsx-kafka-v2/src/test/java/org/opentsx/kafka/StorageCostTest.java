@@ -14,7 +14,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Measures bytes per stored value for episode payloads as a KafScale segment holds them: Avro single-object
- * records, batched (~512 KB) and zstd-compressed (level 3, Kafka's default). Prints a table; see 03-GAP-ANALYSE.
+ * records, batched (~512 KB) and zstd-compressed (level 3, Kafka's default). Prints a table; see the section
+ * "Storage cost" of opentsx-kafka-v2/README.md.
  */
 class StorageCostTest {
 

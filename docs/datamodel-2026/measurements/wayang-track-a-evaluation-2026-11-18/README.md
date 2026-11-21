@@ -14,15 +14,15 @@ Each condition uses the complete synthetic W scenario. Federation covers
 1, 3 and 10 logical sites in one execution JVM. Streaming covers decode,
 clean and statistics at 1, 4 and 12 partitions on both Java paths.
 
-The public files contain 3,780 federation window comparisons and 207,000
-streaming output latency records. Every manifest hash and the generated
-report are checked by the deterministic committed-results regression.
-Percentiles use nearest rank; the CSV files retain the recorded precision.
-
-Resource CSV files retain their captured CRLF line endings. The repository
-[format declaration](../../../../.gitattributes) prevents conversion and
-keeps the standard whitespace checks, including rejection of real trailing
-spaces. All raw-file hashes remain those of the original run.
+The raw files hold 3,780 federation window comparisons and 207,000
+streaming output latency records. They are not in this repository;
+`artifactsSha256` in [metadata](metadata.json) lists the SHA-256 of all 306.
+`tools/test_wayang_track_a_results.py` checks the committed record; with
+`OPENTSX_TRACK_A_DATA` set to a copy of the raw files it also checks every
+hash and regenerates the report byte for byte. Percentiles use nearest rank;
+the CSV files retain the recorded precision. Resource CSV files keep their
+captured CRLF line endings, which [`.gitattributes`](../../../../.gitattributes)
+preserves.
 
 Kafka Produce frames, HTTP aggregate bodies and encrypted TLS client-stream
 bytes are distinct protocol layers. Central raw transfer, central plan

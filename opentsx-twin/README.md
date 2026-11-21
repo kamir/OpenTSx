@@ -4,8 +4,9 @@ A twin built from **atoms** (standard parts) and a **wiring plan** (per site). I
 decision changes every downstream number the way it would in the plant. Concept:
 [`TWIN-COUPLING-SPEC.md`](../docs/datamodel-2026/TWIN-COUPLING-SPEC.md).
 
-This module contains the tightly coupled execution variant **T** (one process). The loosely coupled variant **L**
-(atoms as Smart Topics) is planned and will use the same atom code and the same message contract.
+This module contains two execution variants of the same atoms, plan and message contract: the tightly coupled
+variant **T** (`TwinRunner`, one process) and the loosely coupled variant **L** (`LooseRunner`, one processor per
+atom or group of atoms, with simulated wall time).
 
 ## Try it
 
@@ -67,7 +68,7 @@ feedback cycle of the plan (strongly connected component) in one processor.
   transport; a coupling that can change the result becomes part of the run id.
 * `LooseRun.stats()` reports simulated wall time (ticks), wait and down ticks per atom and the staleness used per
   wire.
-* `bin/opentsx twin-coupling [--csv out.csv] [--scenario id]` runs the RQ1 grid over all scenarios. Results and
+* `bin/opentsx twin-coupling [--csv out.csv] [--scenario id]` runs the coupling grid over all scenarios. Results and
   the design rule (cycles in one processor, BSP between processors) are in
   [TWIN-COUPLING-SPEC §11](../docs/datamodel-2026/TWIN-COUPLING-SPEC.md#11-coupling-results-and-design-rule).
 
@@ -112,7 +113,7 @@ The example plan is [`twin/h2-chain.yaml`](src/main/resources/twin/h2-chain.yaml
 ## House twin (P9.7)
 
 The same method applied to a homeowner: a single-family house in the Erzgebirge (two residents, oil boiler, wood
-stove, no PV, no heat pump). Concept (German): `08-HAUS-ZWILLING.md`.
+stove, no PV, no heat pump).
 **All house numbers are invented example assumptions** until the plan is calibrated against real bills.
 
 ```bash
@@ -124,7 +125,7 @@ bin/opentsx house --simulated                              # calibration on the 
 Until real bills are available, [`twin/beispiel/`](src/main/resources/twin/beispiel/README.md) holds
 **simulated** bills and daily temperatures for 2022–2025. `house.SimulatedBills` generates them with a fixed seed,
 from hidden "true" parameters and with realistic gaps and noise. The calibration finds H/eta and the appliance
-scale, and it reports hot water as not determined (concept §7.6).
+scale, and it reports hot water as not determined.
 
 | Type | Atom | Phase | Main behaviour |
 |------|------|-------|----------------|
@@ -153,7 +154,7 @@ scale, and it reports hot water as not determined (concept §7.6).
 
 ## Scenario "Boot": Etap 22 as an island energy system
 
-Concept (German): `10-BOOT-ZWILLING.md`. A small sailing yacht with a
+A small sailing yacht with a
 portable power station (~1 kWh LiFePO4), 2 × 100 Wp solar and shore power, feeding two laptops, a phone, Starlink,
 a Raspberry Pi and a VHF radio. Plan: [`twin/boot-etap22.yaml`](src/main/resources/twin/boot-etap22.yaml), 15-minute
 steps over a 14-day summer trip. All numbers are assumptions until real data replace them.
@@ -226,9 +227,8 @@ the levers act on measured values. For front ends, `BoatDemo` exposes `plan()`, 
 
 ## Not yet
 
-* Variant L (Smart Topics, watermarks, bounded staleness) and the conformance test L(0) = T.
-* Avro schemas per atom type.
-* Binding the message contract to KafScale.
+* Binding the message contract to KafScale. `LooseRunner` (variant L) passes port messages in memory and simulates
+  transport and wall time; no variant L processor runs on Smart Topics.
 * Atoms for turbine and wake (weather and meter exist for the house twin).
 * An optimizer as policy (P8.4).
 * Real plant data.

@@ -52,7 +52,7 @@ class VectorJobTest {
 
     static final String VECTOR_NODE = """
             - id: n1
-              op: align.vector   # not in the stream operator catalog
+              op: align.vector
               in: [decode]
               params: { every: PT60S, key: turbine, agg: MEAN, emit: any, names: [state] }
             """;
@@ -94,6 +94,17 @@ class VectorJobTest {
         assertTrue(e.getMessage().contains("earliest or latest"), e.getMessage());
         e = assertThrows(IllegalArgumentException.class, () -> plan(late.replace("PT2M", "2 minutes")));
         assertTrue(e.getMessage().contains("lateness must be a duration"), e.getMessage());
+    }
+
+    @Test
+    void refusesTwoInputsWithOneName() throws Exception {
+        String twice = VECTOR_NODE.replace("in: [decode]", "in: [decode, decode]");
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> plan(dag(twice.replace("names: [state]", "names: [state, state]"), VECTOR_SINK)));
+        assertEquals("node n1: two inputs of the vector are both named \"state\"; give every input its own name", e.getMessage());
+        e = assertThrows(IllegalArgumentException.class, () -> plan(dag(twice.replace("names: [state]", "names: [in2]"), VECTOR_SINK)));
+        assertEquals("node n1: two inputs of the vector are both named \"in2\"; give every input its own name", e.getMessage());
+        assertEquals(List.of("in1", "in2"), plan(dag(twice.replace(", names: [state]", ""), VECTOR_SINK)).jobs().get(0).inputNames());
     }
 
     @Test

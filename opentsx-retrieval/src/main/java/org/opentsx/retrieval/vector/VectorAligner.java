@@ -76,6 +76,7 @@ public final class VectorAligner {
     private static final class KeyState {
         final Map<String, String> key;
         final Map<String, TreeMap<Long, Cell>> cells = new LinkedHashMap<>();
+        final Map<String, String> seriesByComponent = new LinkedHashMap<>();
 
         KeyState(Map<String, String> key) {
             this.key = key;
@@ -100,6 +101,10 @@ public final class VectorAligner {
         if (inputs.isEmpty()) {
             throw new IllegalArgumentException("align.vector needs at least one input");
         }
+        String clash = inputNameClash(inputs.stream().map(Input::name).toList());
+        if (clash != null) {
+            throw new IllegalArgumentException(clash);
+        }
         long every = Math.floorDiv(p.every().toNanos(), 1000);
         long maxAgeTicks = Math.floorDiv(Math.floorDiv(p.maxAge() == null ? p.every().toNanos() : p.maxAge().toNanos(), 1000), every);
         String keyBy = p.key().trim();
@@ -122,9 +127,14 @@ public final class VectorAligner {
                     !several ? in.name() : inputs.size() == 1 ? seriesName(s) : in.name() + "." + seriesName(s);
             // the components of one input in name order, so the vector does not depend on the order the series arrive in
             in.series().stream().map(componentOf).distinct().sorted().filter(c -> !components.contains(c)).forEach(components::add);
-            for (Series s : in.series()) {
+            for (Series s : in.series().stream().sorted(java.util.Comparator.comparing(Series::id)).toList()) {
                 String component = componentOf.apply(s);
                 KeyState k = keys.computeIfAbsent(keyText(s, bySeries, all, keyBy), t -> new KeyState(keyOf(s, bySeries, all, keyBy)));
+                String other = k.seriesByComponent.put(component, s.id());
+                if (other != null && !other.equals(s.id())) {
+                    throw new IllegalArgumentException("the series " + other + " and " + s.id() + " both give the component \""
+                            + component + "\" of one vector; choose a key that tells them apart");
+                }
                 TreeMap<Long, Cell> cells = k.cells.computeIfAbsent(component, c -> new TreeMap<>());
                 for (int i = 0; i < s.values().length; i++) {
                     double v = s.values()[i];
@@ -210,5 +220,16 @@ public final class VectorAligner {
             key.put(keyBy, s.tags().getOrDefault(keyBy, ""));
         }
         return key;
+    }
+
+    /** The refusal of a vector in which two inputs have one name, or null. Every runtime refuses it with this text. */
+    public static String inputNameClash(List<String> names) {
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        for (String name : names) {
+            if (!seen.add(name)) {
+                return "two inputs of the vector are both named \"" + name + "\"; give every input its own name";
+            }
+        }
+        return null;
     }
 }

@@ -10,7 +10,8 @@ used by the [B3 site profile](rust-runner-b3.md). The harness uses disposable
 clusters and synthetic windpark data. Producers connect to Proxy endpoints.
 
 The [retained W3 qualification](../../datamodel-2026/measurements/rust-b4-mixed-20261120/REPORT.md)
-records the executed cases, source/runtime hashes and raw per-window evidence.
+records the executed cases and source/runtime hashes; its manifest lists the SHA-256 of the raw per-window evidence,
+which is not in this repository.
 The physical ARM64 board measurement remains open (D-T14: ARM64 only).
 
 ## Follow the actual runtime boundary

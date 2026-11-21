@@ -354,10 +354,10 @@ Implemented in: `SystemDoc.java:103-105,335-354,550-583`, `Systems.java:292-297`
 * A generator MUST NOT write to any topic other than the synthetic topic of its domain.
 * Topic names come from `TopicLayout`. A missing synthetic, clean or features topic is created when it is first
   written: one partition, `compression.type=zstd`, `cleanup.policy=delete`.
-* With `--kafscale`, the retrieval server follows the episodes topic, the clean topic and the synthetic topic of its
-  domain. It does not read the features topic.
+* With `--kafscale`, the retrieval server follows the episodes topic, the clean topic, the features topic and the
+  synthetic topic of its domain.
 
-Implemented in: `TopicLayout.java:42-44,165-181,189-206`, `KafScaleFeed.java:126-132,163-178`,
+Implemented in: `TopicLayout.java:42-44,165-181,189-206`, `KafScaleFeed.java:128-134,172-175,400-412`,
 `VectorProcessorApp.java:85-89`.
 
 <a id="s42-generated-series"></a>
@@ -475,7 +475,7 @@ The source of a DAG document with a series sink:
 | `source.series` | one or more series ids; only these series are read |
 | `source.start` | `earliest` (default): begin at the start of the topic; `latest`: begin with what arrives from now on |
 
-Implemented in: `SeriesJob.java:13-141`, `flow.ts:698-755`.
+Implemented in: `SeriesJob.java:13-141`, `flow.ts:700-757`.
 
 <a id="s52-validation"></a>
 
@@ -776,7 +776,7 @@ Implemented in: `signals.ts:150-158,181-188,223-252,573-611`, `SignalsPlace.tsx:
 * `dq.plausible-range` is preset with `expect.min` and `expect.max`. `resample` is preset with 60 seconds.
 * The workbench MAY be used without a signal. It then has no context line.
 
-Implemented in: `Workbench.tsx:168-181,695-742,826-831,948-972`, `types.ts:144-160`.
+Implemented in: `Workbench.tsx:168-181,695-742,826-831,948-972`, `types.ts:139-155`.
 
 <a id="s84-publish-as-clean-signal"></a>
 
@@ -802,7 +802,7 @@ The button is enabled once a step other than the source is selected.
 * The system document in the repository is not changed. The page Signals finds the clean series by its tags
   ([section 4.4](#s44-find-the-series-of-a-signal)).
 
-Implemented in: `PublishClean.tsx:60-101`, `flow.ts:534-596,698-755`, `deployments.ts:61,80-89`,
+Implemented in: `PublishClean.tsx:60-101`, `flow.ts:534-596,700-757`, `deployments.ts:61,80-89`,
 `Workbench.tsx:961-983`.
 
 <a id="s9-processor-descriptions"></a>

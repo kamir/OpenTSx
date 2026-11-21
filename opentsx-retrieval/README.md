@@ -178,16 +178,27 @@ Vector topics are written by the vector processor (below). The server is its fro
   routes need the token in the header `X-OpenTSx-Run-Token`; anything else gets 401. Without a token, whoever
   reaches the port can deploy and stop. The SaaS backend holds the token and forwards for its users
   (`POST /api/v1/dags/deploy`, `/stop`); it names the user in `X-OpenTSx-By`, which ends up in the control record.
+* Two inputs of one `align.vector` node with the same name are refused with
+  `node <id>: two inputs of the vector are both named "<name>"; give every input its own name`. An input without an
+  entry in `params.names` is named `in1`, `in2` and so on by its position. `VectorAligner.align` and
+  `new VectorStream(inputNames, params, expected, lateness)` refuse such inputs with the same text, without
+  `node <id>: `.
 
 The operator is `org.opentsx.retrieval.vector.VectorAligner`. It passes the test vectors shared with the web
 workbench (`docs/datamodel-2026/testvectors/align-vector.v1.json`); the rules are in
-`docs/datamodel-2026/VECTOR-AND-DAG-SPEC.md`, section 2.
+`docs/datamodel-2026/VECTOR-AND-DAG-SPEC.md`, section 2. `VectorAligner.align` refuses two series that give the same
+component of one vector:
+`the series <a> and <b> both give the component "<c>" of one vector; choose a key that tells them apart`. `<a>` and
+`<b>` are the ids of the two series. `<a>` comes first: inputs in their order, the series of one input in id order.
+Choose a `key` that tells them apart, such as a tag.
 
-`VectorStream` is the same operator over a continuing input. `new VectorStream(expected, params, lateness)` reads one
-set of series for every input; `new VectorStream(expectedByInput, params, lateness)` gives each input series of its
-own, so two inputs may read the same series under different names. Call `add(input, seriesId, ...)` for a stream with
-named inputs and `add(seriesId, ...)` otherwise; the other call fails. `state()` and `restore(...)` carry open ticks
-from one run to the next. `VectorStreamTest` checks both modes against `VectorAligner.align` for every shared case.
+`VectorStream` is the same operator over a continuing input. It refuses two series that give the same component of
+one vector, which `VectorAligner` aggregates into one value (`docs/datamodel-2026/VECTOR-AND-DAG-SPEC.md`, section
+2.2). `new VectorStream(expected, params, lateness)` reads one set of series for every input;
+`new VectorStream(expectedByInput, params, lateness)` gives each input series of its own, so two inputs may read the
+same series under different names. Call `add(input, seriesId, ...)` for a stream with named inputs and
+`add(seriesId, ...)` otherwise; the other call fails. `state()` and `restore(...)` carry open ticks from one run to
+the next. `VectorStreamTest` checks both modes against `VectorAligner.align` for every shared case.
 
 See the [Kafka-native streaming operating guide](../docs/devops/kafka-native-streaming.md) for the supported
 series and vector operators, strict deployment checks, restart semantics and broker acceptance.
