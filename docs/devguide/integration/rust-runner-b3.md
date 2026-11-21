@@ -243,3 +243,48 @@ and [cleanup path](https://github.com/openssh/openssh-portable/blob/V_10_2_P1/ss
 Read [TASK-020 B3](../../../EVOLUTION/TASK-020-wayang-ts-operators.md#b3-agent-offline-operation-ssh-launch)
 for the acceptance results. Under D-T14 no ARMv7 hardware is required; ARMv7
 QEMU results stay supplementary.
+
+## Read connection ends in the validation harnesses
+
+The
+[validation observer](../../../opentsx-wayang/src/test/java/org/opentsx/wayang/LatencyProtocolObserver.java)
+relays Kafka traffic between test clients and the KafScale Proxy. It
+classifies the end of a connection by side.
+
+An end of the client stream is abandonment by the client. This covers a clean
+close and a reset, between frames and inside a frame. It also covers a socket
+error while the observer writes a response to the client. Abandonment does not
+fail the check.
+
+The observer reads the client stream to its end and validates every complete
+frame. At that end it drops the pending requests of the connection. It closes
+the client side and shuts down its output toward the broker. Broker responses
+that arrive after that end, or after a failed write to the client, are read
+and dropped without being recorded.
+
+Before the observer reaches the end of the client stream, these errors fail
+the check:
+
+- a complete client frame that fails validation: an invalid length, an
+  unparsable header or request, or a broken measurement requirement
+- an unknown response correlation
+- a close, reset or other I/O error on the broker side, with or without
+  pending requests
+
+A response correlation remains pending until its response is forwarded and
+flushed or its client ends the connection. When the broker and the client
+close independently at nearly the same time, thread timing decides which end
+the observer sees first.
+
+The signal link of the
+[offline test](../../../opentsx-wayang/src/test/java/org/opentsx/wayang/RustOfflineCatchupIntegrationTest.java)
+ends a connection without a failure when its runner side closes or resets. On a
+clean end of the runner stream it shuts down its output toward the observer and
+still relays responses to the runner. Errors while both sides are open fail
+the check.
+
+The deterministic
+[observer tests](../../../opentsx-wayang/src/test/java/org/opentsx/wayang/LatencyProtocolObserverTest.java),
+[connection tests](../../../opentsx-wayang/src/test/java/org/opentsx/wayang/LatencyProtocolObserverConnectionTest.java)
+and [signal link tests](../../../opentsx-wayang/src/test/java/org/opentsx/wayang/SignalLinkTest.java)
+check these boundaries with streams and loopback sockets, without sleeps.

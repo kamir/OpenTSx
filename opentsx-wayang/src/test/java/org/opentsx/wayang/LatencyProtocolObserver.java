@@ -19,7 +19,6 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -34,6 +33,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -96,9 +96,10 @@ final class LatencyProtocolObserver implements AutoCloseable {
                     sockets.add(client);
                     sockets.add(broker);
                     Map<Integer, Pending> pending = new ConcurrentHashMap<>();
+                    AtomicBoolean clientEnded = new AtomicBoolean();
                     DataOutputStream toClient = new DataOutputStream(client.getOutputStream());
-                    threads.submit(() -> requests(client, broker, pending));
-                    threads.submit(() -> responses(broker, client, toClient, pending));
+                    threads.submit(() -> requests(client, broker, pending, clientEnded));
+                    threads.submit(() -> responses(broker, client, toClient, pending, clientEnded));
                 } catch (IOException e) {
                     if (!closing) failure.compareAndSet(null, e);
                 }
@@ -125,7 +126,7 @@ final class LatencyProtocolObserver implements AutoCloseable {
         if (failure.get() != null) throw new IllegalStateException("protocol observer failed", failure.get());
     }
 
-    private void requests(Socket client, Socket broker, Map<Integer, Pending> pending) {
+    private void requests(Socket client, Socket broker, Map<Integer, Pending> pending, AtomicBoolean clientEnded) {
         try {
             DataInputStream in = new DataInputStream(client.getInputStream());
             DataOutputStream out = new DataOutputStream(broker.getOutputStream());
@@ -155,6 +156,10 @@ final class LatencyProtocolObserver implements AutoCloseable {
         } catch (Exception e) {
             if (!closing && !client.isClosed() && !broker.isClosed()) failure.compareAndSet(null, e);
         } finally {
+            synchronized (pending) {
+                clientEnded.set(true);
+                pending.clear();
+            }
             closeSocket(client);
             // Half-close so the response thread reads the remaining responses; closing with unread data would reset the broker.
             try {
@@ -165,16 +170,22 @@ final class LatencyProtocolObserver implements AutoCloseable {
         }
     }
 
-    private void responses(Socket broker, Socket client, DataOutputStream toClient, Map<Integer, Pending> pending) {
+    private void responses(Socket broker, Socket client, DataOutputStream toClient, Map<Integer, Pending> pending, AtomicBoolean clientEnded) {
         try {
             DataInputStream in = new DataInputStream(broker.getInputStream());
-            DataOutputStream out = toClient;
+            boolean clientGone = false;
             byte[] frame;
             while ((frame = readBrokerFrame(in)) != null) {
                 synchronized (pending) {
                     int correlation = ByteBuffer.wrap(frame).getInt();
+                    if (clientEnded.get()) continue;
                     Pending request = pending.get(correlation);
                     if (request == null) throw new IllegalStateException("unknown response correlation " + correlation);
+                    // After a failed write to the client, later responses are dropped without being recorded.
+                    if (clientGone) {
+                        pending.remove(correlation);
+                        continue;
+                    }
                     if (request.header.apiKey() == ApiKeys.METADATA) {
                         frame = metadata(frame, request.header, server.getLocalPort(), topics);
                     } else if (request.produce != null) {
@@ -182,9 +193,8 @@ final class LatencyProtocolObserver implements AutoCloseable {
                         else if (decodeEpisodes) acknowledge(frame, request, System.nanoTime(), entries);
                         else produceErrors.addAndGet(acknowledge(frame, request, System.nanoTime(), entries, false));
                     }
-                    forwardResponse(out, frame, pending);
-                    // The client is gone: drop its responses; the request thread ends the connection at the client end.
-                    if (pending.remove(correlation) != null) out = new DataOutputStream(OutputStream.nullOutputStream());
+                    forwardResponse(toClient, frame, pending);
+                    clientGone = pending.remove(correlation) != null;
                 }
             }
             throw new EOFException("broker closed the connection; pending requests: " + pending.size());

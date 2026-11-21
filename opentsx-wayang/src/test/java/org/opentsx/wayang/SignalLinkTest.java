@@ -37,6 +37,21 @@ class SignalLinkTest {
     }
 
     @Test
+    void runnerEndOfStreamHalfClosesTowardTheObserver() throws Exception {
+        try (ServerSocket backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress());
+             var link = new RustOfflineCatchupIntegrationTest.SignalLink("127.0.0.1:" + backend.getLocalPort())) {
+            link.online = true;
+            try (Socket runner = connect(link); Socket observer = backend.accept()) {
+                runner.shutdownOutput();
+                assertEquals(-1, observer.getInputStream().read());
+                observer.getOutputStream().write(7);
+                assertEquals(7, runner.getInputStream().read());
+            }
+            link.check();
+        }
+    }
+
+    @Test
     void responsesRelayedToAClosedRunnerDoNotFailTheLink() throws Exception {
         try (ServerSocket backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress());
              var link = new RustOfflineCatchupIntegrationTest.SignalLink("127.0.0.1:" + backend.getLocalPort())) {

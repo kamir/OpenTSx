@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class LatencyProtocolObserverConnectionTest {
 
@@ -46,10 +47,10 @@ class LatencyProtocolObserverConnectionTest {
         return MessageUtil.byteBufferToArray(new ProduceRequest(data, VERSION).serializeWithHeader(PRODUCE));
     }
 
-    private static byte[] produced() {
+    private static byte[] produced(short error) {
         ProduceResponseData data = new ProduceResponseData();
         data.responses().add(new ProduceResponseData.TopicProduceResponse().setName("fixture").setPartitionResponses(List.of(
-                new ProduceResponseData.PartitionProduceResponse().setIndex(0).setBaseOffset(0).setErrorCode((short) 0))));
+                new ProduceResponseData.PartitionProduceResponse().setIndex(0).setBaseOffset(error == 0 ? 0 : -1).setErrorCode(error))));
         return IncrementLatencyTest.response(PRODUCE.toResponseHeader(), data, VERSION);
     }
 
@@ -67,36 +68,28 @@ class LatencyProtocolObserverConnectionTest {
     }
 
     @Test
-    void cleanClientCloseSeenBeforeTheResponseDropsAPendingProduce() throws Exception {
+    void lateProduceErrorAfterACleanClientCloseIsDroppedUnrecorded() throws Exception {
         byte[] request = produce();
+        byte[] versions = request(ApiKeys.API_VERSIONS, 1, 64);
         try (ServerSocket backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress());
              LatencyProtocolObserver observer = new LatencyProtocolObserver(backend.getLocalPort(), false)) {
             try (Socket client = connect(observer); Socket broker = backend.accept()) {
                 DataInputStream in = new DataInputStream(broker.getInputStream());
-                LatencyProtocolObserver.writeFrame(new DataOutputStream(client.getOutputStream()), request);
+                DataOutputStream out = new DataOutputStream(client.getOutputStream());
+                LatencyProtocolObserver.writeFrame(out, request);
+                LatencyProtocolObserver.writeFrame(out, versions);
                 assertArrayEquals(request, LatencyProtocolObserver.readFrame(in));
+                assertArrayEquals(versions, LatencyProtocolObserver.readFrame(in));
                 client.close();
                 assertEquals(-1, in.read());
-                byte[] response = produced();
-                broker.getOutputStream().write(ByteBuffer.allocate(Integer.BYTES + response.length).putInt(response.length).put(response).array());
+                DataOutputStream responses = new DataOutputStream(broker.getOutputStream());
+                LatencyProtocolObserver.writeFrame(responses, produced((short) 6));
+                // This write completes only after the observer has read the Produce response before it.
+                LatencyProtocolObserver.writeFrame(responses, ByteBuffer.allocate(16 << 20).putInt(1).array());
             }
-            observer.check();
-        }
-    }
-
-    @Test
-    void brokerResponsesAfterTheClientEndAreReadWithoutAReset() throws Exception {
-        byte[] request = request(ApiKeys.API_VERSIONS, 0, 64);
-        try (ServerSocket backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress());
-             LatencyProtocolObserver observer = new LatencyProtocolObserver(backend.getLocalPort(), false)) {
-            try (Socket client = connect(observer); Socket broker = backend.accept()) {
-                DataInputStream in = new DataInputStream(broker.getInputStream());
-                LatencyProtocolObserver.writeFrame(new DataOutputStream(client.getOutputStream()), request);
-                assertArrayEquals(request, LatencyProtocolObserver.readFrame(in));
-                client.close();
-                assertEquals(-1, in.read());
-                LatencyProtocolObserver.writeFrame(new DataOutputStream(broker.getOutputStream()), new byte[16 << 20]);
-            }
+            assertEquals(1, observer.produceRecords.get());
+            assertEquals(0, observer.produceErrors.get());
+            assertTrue(observer.entries.isEmpty());
             observer.check();
         }
     }
@@ -115,7 +108,7 @@ class LatencyProtocolObserverConnectionTest {
                     assertArrayEquals(request, LatencyProtocolObserver.readFrame(in));
                     assertEquals(held.length, in.readInt());
                     client.close();
-                    LatencyProtocolObserver.writeFrame(new DataOutputStream(broker.getOutputStream()), produced());
+                    LatencyProtocolObserver.writeFrame(new DataOutputStream(broker.getOutputStream()), produced((short) 0));
                     in.transferTo(OutputStream.nullOutputStream());
                 }
                 observer.check();
@@ -195,11 +188,12 @@ class LatencyProtocolObserverConnectionTest {
         }
     }
 
-    // The first response cannot reach the closed client. The second completes only after the observer read the first.
-    private static void respondToTheClosedClient(Socket broker) throws IOException {
+    // The first response cannot reach the closed client. The last completes only after the observer read the others.
+    private static void respondToTheClosedClient(Socket broker, byte[]... between) throws IOException {
         DataOutputStream out = new DataOutputStream(broker.getOutputStream());
         byte[] response = new byte[16 << 20];
         LatencyProtocolObserver.writeFrame(out, ByteBuffer.wrap(response).putInt(0, 2).array());
+        for (byte[] frame : between) LatencyProtocolObserver.writeFrame(out, frame);
         LatencyProtocolObserver.writeFrame(out, ByteBuffer.wrap(response).putInt(0, 1).array());
     }
 
@@ -219,9 +213,11 @@ class LatencyProtocolObserverConnectionTest {
                 assertArrayEquals(versions, LatencyProtocolObserver.readFrame(in));
                 assertEquals(held.length, in.readInt());
                 client.close();
-                respondToTheClosedClient(broker);
+                respondToTheClosedClient(broker, produced((short) 6));
                 assertEquals(held.length, in.transferTo(OutputStream.nullOutputStream()));
             }
+            assertEquals(1, observer.produceRecords.get());
+            assertEquals(0, observer.produceErrors.get());
             observer.check();
         }
     }
