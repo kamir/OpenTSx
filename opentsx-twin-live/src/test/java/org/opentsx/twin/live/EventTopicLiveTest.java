@@ -93,6 +93,28 @@ class EventTopicLiveTest {
         first.attrs().forEach((k, val) -> assertEquals(val, v0.get("attrs").get(k).asText()));
     }
 
+    /** Interventions have no topic of their own; an applied one is an event of type intervention on the event topic. */
+    @Test
+    void appliedInterventionsAreEventsOnTheEventTopic() throws Exception {
+        StudioScenario s = h2();
+        RunResult run = EventPublisher.referenceRun(s);
+        MemoryTopics topics = new MemoryTopics();
+        String topic = new EventPublisher(topics).publish(s.plan(), run, null);
+
+        int interventions = 0;
+        for (Topics.Rec r : topics.open(topic, Topics.EARLIEST).poll(Duration.ofMillis(10))) {
+            JsonNode v = EventTopic.JSON.readTree(r.value());
+            if (v.get("type").asText().equals("intervention")) {
+                interventions++;
+                Set<String> attrs = new TreeSet<>();
+                v.get("attrs").fieldNames().forEachRemaining(attrs::add);
+                assertEquals(Set.of("author", "control", "reason", "value"), attrs);
+            }
+        }
+        assertEquals(run.events().stream().filter(e -> e.type().equals("intervention")).count(), interventions);
+        assertTrue(interventions > 0, "the h2-chain reference run applies interventions");
+    }
+
     @Test
     void pacedPublishingSpreadsTheRunOverTheDuration() throws Exception {
         StudioScenario s = h2();

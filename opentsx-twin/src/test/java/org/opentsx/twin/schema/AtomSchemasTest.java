@@ -25,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -87,8 +88,9 @@ class AtomSchemasTest {
     /** No code writes these records to a topic ({@code MessageLog} is the only sink), so no schema names one. */
     @Test
     void schemasNameNoTopic() {
+        Pattern topic = Pattern.compile("(?i)topic|twin\\.<|\\.(msgs|barrier|interventions)\\b");
         for (Map.Entry<String, String> e : AtomSchemas.files(AtomCatalog.standard()).entrySet()) {
-            assertFalse(e.getValue().contains("topic"), e.getKey() + " names a topic that no code writes");
+            assertFalse(topic.matcher(e.getValue()).find(), e.getKey() + " names a topic that no code writes");
         }
     }
 

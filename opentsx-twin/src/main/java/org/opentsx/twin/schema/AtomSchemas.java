@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Avro schemas of the twin's topic contract: the envelopes shared by all atoms ({@code PortMessage}, {@code Barrier},
+ * Avro schemas of the twin's message contract: the envelopes shared by all atoms ({@code PortMessage}, {@code Barrier},
  * {@code Intervention}) and one snapshot record per atom type with its state variables, outputs (value and origin)
  * and the controls in force. Variant L and non-Java atoms (Python, Go) exchange exactly these records; the
  * checked-in files under {@code twin/avro/} are generated from the atom catalog and kept in sync by a test.

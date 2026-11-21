@@ -10,7 +10,7 @@ import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 /**
- * The topic that carries the events of one twin run: {@code twin.<id>.<run>.events}, the only topic of a twin.
+ * The topic that carries the events of one twin run: {@code twin.<id>.<run>.events}, the only topic a twin run writes.
  * One partition, so the log keeps the order of the run. The key of a record is the atom; the value is JSON
  * ({@link #SCHEMA}):
  * <pre>
