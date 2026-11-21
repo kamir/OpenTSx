@@ -133,8 +133,9 @@ export default function ModelsPlace({ status, decisions }: { status: SystemStatu
       <div className="wb-inv-source">
         <span>
           A model is released for a decision, not in general. Usable: its inputs are fit and it was checked against
-          measurements. Restricted: it runs, but its result shows a mechanism, not an effect. Blocked: an input is
-          missing, too old or of an origin the decision does not accept.
+          measurements. Restricted: it runs, but it has no evidence or was checked on generated data only, an input is
+          generated or lies outside the range it was checked in, or its card states a limit the server does not
+          evaluate. Blocked: an input is missing, too old or of an origin the decision does not accept.
           {decisions?.asOf && ` Age is measured against the newest data of the system (${decisions.asOf.replace('T', ' ').replace('Z', ' UTC')}).`}
         </span>
       </div>

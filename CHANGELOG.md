@@ -12,6 +12,35 @@ entries before 3.0.0 are grouped by date.
 
 ### Changed
 
+- The `doc` of the Avro envelopes `PortMessage`, `Barrier` and `Intervention` (`opentsx-twin`, `twin/avro/`) names
+  no topic, and the `opentsx-twin-live` docs no longer list `.msgs`, `.barrier` and `.interventions` next to the event
+  topic: no code writes these records to a topic. The event topic is the only topic a twin run writes; an applied
+  intervention appears there only as an event of type `intervention`. Fields and the wire format are
+  unchanged. `AtomSchemasTest` and `EventTopicLiveTest` fail when these docs name a topic that no code writes. The
+  example event in the twin-live README and in `EventTopic` is the record the h2-chain reference run writes. The
+  `opentsx-twin` docs call the envelopes the message contract, as TWIN-COUPLING-SPEC section 7 does, and the
+  twin-live README names the Studio controls by their element ids.
+- `LooseRunnerTest` checks variant L conformance for every scenario in the modes `SHADOW`, `WHAT_IF` and `FORECAST`:
+  staleness 0 gives the run id, hash, events, KPIs, port messages and commit barriers of variant T and no stale read,
+  for every what-if alternative, a forecast from mid-run and every Studio forecast, not only the run hash of
+  `h2-chain`. Its per-atom transports stress atoms that exist and slow the run. Of the replaced transports, one put a
+  slow processor on `balance`, which is an atom type and not an atom, and an outage on `market`, which delays no
+  reader in `h2-chain` and is not an atom of `haus` and `boot`; it took the ticks of `bsp()` in every scenario.
+  Another put a lag on `ely`, which is not an atom of `haus` and `boot`, so that lag added no tick there. A combined
+  transport applies lag, jitter, a slow processor and an outage at once. The test fails when a stressor names no atom
+  of the plan or adds no tick. TWIN-COUPLING-SPEC §10 states that `lag`, `stepTicks` and `outages` keys that are not
+  atoms are not rejected and slow no atom, and a test covers it. `LooseRunner` behavior is unchanged.
+- Breaking for operators: the retrieval server does not start with `--kafscale` and `--dag-runs true` without a run
+  token. Set `--dag-run-token <token>` or `OPENTSX_DAG_RUN_TOKEN`; a blank value counts as none. The server fails with
+  `--dag-runs true needs a run token: set OPENTSX_DAG_RUN_TOKEN or --dag-run-token` instead of printing
+  `dag deployments: OPEN` and accepting `POST /v1/dags/deploy`, `/v1/dags/stop` and `/v1/systems/<id>/generate` from
+  every caller. The k3s setup is unchanged: `20-configure.sh` generates the token for `RETRIEVAL_DAG_RUNS=true`. A
+  `RetrievalServer` built with `Dags` and `dagWrites` true but without a token throws an `IllegalArgumentException`;
+  `generatedSeries` on a server without a token throws an `IllegalStateException`. The startup line names DAG
+  deployments, stops and generated series. The operator docs, the backend README and SYSTEM-DOCUMENT-SPEC 7.3 say
+  that `DAG_RUN_ROLE=user` (`SAAS_DAG_RUN_ROLE` in k3s) also opens demo generators and Wayang runs to every account.
+  With `DAG_RUN_ROLE=user` the SaaS backend prints at startup that every signed-in account may deploy and stop DAGs,
+  run demo generators and run Wayang deployments, and that sign-up is open.
 - **Breaking for operators.** `opentsx-twin-live` names the event topic of a twin run through `TopicLayout`:
   `TopicLayout.twinEvents(twin, run)` gives `tsx.<domain>.twin.<twin>.<run>.events.v1`, for example
   `tsx.wind.twin.h2-chain.h2-chain-6734f91571b28b83.events.v1`. Two deployments with different domains on one shared
@@ -32,24 +61,6 @@ entries before 3.0.0 are grouped by date.
   bridge with the publisher's domain, open the Studio with `?domain=<domain>`, and point every consumer that reads
   the topic by name at the new name. See
   [Move consumers to the domain topic](opentsx-twin-live/README.md#move-consumers-to-the-domain-topic).
-- The `doc` of the Avro envelopes `PortMessage`, `Barrier` and `Intervention` (`opentsx-twin`, `twin/avro/`) names
-  no topic, and the `opentsx-twin-live` docs no longer list `.msgs`, `.barrier` and `.interventions` next to the event
-  topic: no code writes these records to a topic. The event topic is the only topic a twin run writes; an applied
-  intervention appears there only as an event of type `intervention`. Fields and the wire format are
-  unchanged. `AtomSchemasTest` and `EventTopicLiveTest` fail when these docs name a topic that no code writes. The
-  example event in the twin-live README and in `EventTopic` is the record the h2-chain reference run writes. The
-  `opentsx-twin` docs call the envelopes the message contract, as TWIN-COUPLING-SPEC section 7 does, and the
-  twin-live README names the Studio controls by their element ids.
-- `LooseRunnerTest` checks variant L conformance for every scenario in the modes `SHADOW`, `WHAT_IF` and `FORECAST`:
-  staleness 0 gives the run id, hash, events, KPIs, port messages and commit barriers of variant T and no stale read,
-  for every what-if alternative, a forecast from mid-run and every Studio forecast, not only the run hash of
-  `h2-chain`. Its per-atom transports stress atoms that exist and slow the run. Of the replaced transports, one put a
-  slow processor on `balance`, which is an atom type and not an atom, and an outage on `market`, which delays no
-  reader in `h2-chain` and is not an atom of `haus` and `boot`; it took the ticks of `bsp()` in every scenario.
-  Another put a lag on `ely`, which is not an atom of `haus` and `boot`, so that lag added no tick there. A combined
-  transport applies lag, jitter, a slow processor and an outage at once. The test fails when a stressor names no atom
-  of the plan or adds no tick. TWIN-COUPLING-SPEC §10 states that `lag`, `stepTicks` and `outages` keys that are not
-  atoms are not rejected and slow no atom, and a test covers it. `LooseRunner` behavior is unchanged.
 
 - TASK-020 U01 decisions D-T16 to D-T22 (owner, 2026-11-21). `TsxCompileContext.Boundary` loses `admitsRaw` (D-T22):
   no raw series, pair or vector and no operator with merge class `none` can feed a federated sink. Spec S1.10, S2.2
@@ -673,6 +684,23 @@ entries before 3.0.0 are grouped by date.
   committed page could not be rebuilt byte for byte. Section 8 of `TWIN-COUPLING-SPEC.md` limits the equal run hash to
   runs on the same JVM. The page is rebuilt with `tools/build_studio.py`; `StudioPageTest` and
   `tools/test_studio_page.py` check it.
+- `GET /v1/systems/{id}/decisions` no longer shows an analysis as `usable` when its decision card states a limit
+  the retrieval server does not evaluate. An applying need with `maxQuestionable` adds the reason
+  `<signal>: the share of questionable values is not evaluated by this server`, and an analysis with
+  `uncertainty.blockAbove` adds `the width of the uncertainty is not evaluated by this server`. Either makes the
+  analysis at best `restricted`. Both fields stay in `opentsx.decision.v1`. No status of the example card
+  `h2-dispatch` changes; `price-following` lists the uncertainty reason last. The place "Models" of the web
+  application names every cause of `restricted` in its legend, this one included. Sections 1.3, 1.4 and 2.3 of
+  [`DECISION-CARD-SPEC.md`](docs/datamodel-2026/DECISION-CARD-SPEC.md) and the retrieval README describe the rule.
+- `GET /v1/systems/{id}/runs/{run}/compare` ranks no KPI when an input of either run has the origin `SYNTHETIC`,
+  as `DECISION-CARD-SPEC.md` section 6 requires. The KPIs keep `delta` and have no `verdict`; the new field `reasons`
+  holds `generated, not measured: <ports>; no KPI is ranked better or worse` and is empty otherwise. A run on a demo
+  demand was compared with its baseline as `better` or `worse`. The place "Simulate" shows the reason above the
+  table and colours no difference without a verdict; a difference of zero without a verdict shows as empty instead
+  of `-0`. A Python caller of `RetrievalClient.compare` that reads `verdict` must handle its absence. Notebook 4
+  (`python-package/notebooks/04-den-zwilling-fragen.ipynb`) shows such a comparison with an empty `verdict` column
+  and prints the reason above the table; it raised `KeyError` on the missing `verdict` and is now in English.
+
 - The `statsmodels` 0.15.0 pin of `python-package` now matches `deploy/local-cp/requirements.in` and
   `requirements.lock`. With the old 0.14.6 constraint, the install in `standalone-numerics.md` failed with
   `ResolutionImpossible`, and `test_finite_service_http.py` expected 0.14.6. `statsmodels` 0.15.0 adds the pinned

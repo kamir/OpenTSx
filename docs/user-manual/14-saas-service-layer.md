@@ -10,9 +10,9 @@
 * **Backend:**
   * users, organizations and teams with JWT login,
   * flows stored per user (`/api/v1/flows`: create, read, update, delete), each a JSON definition with a status,
-  * `POST /api/v1/dags/deploy` and `/stop`: hand a flow to the vector processor or stop it (administrators only
-    unless configured otherwise),
-  * `/api/v1/dags/wayang-rust`: administrator-only capability, bounded/continuous deployment, status and continuous
+  * `POST /api/v1/dags/deploy` and `/stop`: hand a flow to the vector processor or stop it,
+  * `POST /api/v1/systems/<system>/generate`: run the demo generator of a signal,
+  * `/api/v1/dags/wayang-rust`: capability, bounded/continuous deployment, status and continuous
     stop and explicit fenced replacement endpoints. PostgreSQL
     stores the exact DAG, accepted clock, source cuts and whole-topic ownership; a standalone coordinator reconciles
     the saved plan through a custom Wayang Rust platform. Bounded completion saves its verified result and
@@ -24,6 +24,9 @@
     restart replays the same whole topics into a fresh output. Stop retains the worker chain; request replacement
     while the deployment is active. Unknown broker outcomes block the switch. See the [continuous guide](../devguide/integration/wayang-rust-continuous.md),
   * a `FlinkService` that submits processing-flow descriptors as Flink jobs.
+  * One setting decides who may use the DAG, generator and Wayang routes above: `DAG_RUN_ROLE`. With `superuser`,
+    the default, only administrators may. With `user`, every signed-in account may use all three, and sign-up is
+    open. The backend says so in a line that starts with `DAG_RUN_ROLE=user:` when it starts.
 * **Frontend:**
   * **OpenTSx Flow Composer** (`/dashboard`, the page after sign-in): the flows of the account. Select a flow, open
     it in the workbench, create, rename, copy and delete flows, and start and stop the Smart Topic of a flow the
@@ -51,7 +54,8 @@
     three colours, what the document assumes about the plant, and a link to the Smart Topics Studio (`/studio/`).
     "Simulate": ask the twin what happens when a decision changes (a control set at a time, a policy, a forecast
     from a time on); the answer is a run shown next to the reference, with the difference in every KPI, and it
-    says how far it may be trusted. The
+    says how far it may be trusted. When an input of either run is generated, no difference is marked better or
+    worse, and the reason stands above the table. The
     switch "Guide" shows the seven steps of the method of [chapter 16](16-engineering-method.md) with the state of
     the system in each. The data comes from the retrieval server (`GET /v1/systems`).
   * the earlier visual flow builder (`/flow-builder`); its flows cannot be opened in the workbench.

@@ -20,8 +20,8 @@ import java.util.TreeMap;
  * <ul>
  *   <li><b>blocked</b>: a signal it needs is missing in the grade asked for, is older than allowed, or has an origin
  *   the decision does not accept. What is missing blocks exactly the analyses that need it.</li>
- *   <li><b>restricted</b>: the inputs are there, but the analysis has no evidence, was only checked on generated data,
- *   an input lies outside the range it was checked in, or an input was made of generated data.</li>
+ *   <li><b>restricted</b>: not blocked, but the analysis has no or only generated evidence, an input lies outside its
+ *   checked range or is made of generated data, or the card states a limit this server does not evaluate.</li>
  *   <li><b>usable</b>: neither.</li>
  * </ul>
  *
@@ -171,6 +171,9 @@ public final class Decisions {
             }
             n.path("reasons").forEach(blocking::add);
             synthetic |= n.path("containsSynthetic").asBoolean(false);
+            if (n.hasNonNull("maxQuestionable")) {
+                restricting.add(n.path("signal").asText() + ": the share of questionable values is not evaluated by this server");
+            }
         }
         if (synthetic) {
             restricting.add("an input is generated or made of generated data: the result shows the mechanism, not an effect");
@@ -206,6 +209,9 @@ public final class Decisions {
             if (onlySynthetic) {
                 restricting.add("the analysis was checked on generated data only");
             }
+        }
+        if (a.path("uncertainty").hasNonNull("blockAbove")) {
+            restricting.add("the width of the uncertainty is not evaluated by this server");
         }
         o.put("status", !blocking.isEmpty() ? "blocked" : !restricting.isEmpty() ? "restricted" : "usable");
         ArrayNode reasons = o.putArray("reasons");
