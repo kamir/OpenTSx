@@ -34,6 +34,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -152,7 +153,7 @@ class LatencyProtocolObserverTest {
             @Override
             public void flush() { assertEquals(1, pending.size()); }
         };
-        LatencyProtocolObserver.forwardResponse(new DataOutputStream(output), frame, pending);
+        assertTrue(LatencyProtocolObserver.forwardResponse(new DataOutputStream(output), frame, pending));
         ByteArrayOutputStream expected = new ByteArrayOutputStream();
         LatencyProtocolObserver.writeFrame(new DataOutputStream(expected), frame);
         assertArrayEquals(expected.toByteArray(), bytes.toByteArray());
@@ -205,7 +206,7 @@ class LatencyProtocolObserverTest {
             DataOutputStream out = new DataOutputStream(observer.getOutputStream());
             for (ApiKeys key : new ApiKeys[]{ApiKeys.METADATA, ApiKeys.PRODUCE, ApiKeys.FETCH, ApiKeys.API_VERSIONS}) {
                 Map<Integer, LatencyProtocolObserver.Pending> pending = pending(key);
-                LatencyProtocolObserver.forwardResponse(out, frame, pending);
+                assertFalse(LatencyProtocolObserver.forwardResponse(out, frame, pending));
                 assertTrue(pending.containsKey(0));
             }
         }

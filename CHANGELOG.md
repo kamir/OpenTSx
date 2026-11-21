@@ -570,16 +570,17 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - Classify the end of a validation observer connection by side. Any end of the
   client stream, a clean close or a reset, between frames or inside a frame, and
   a socket error while writing a response to the client, are abandonment and do
-  not fail the check. The observer reads the client stream to its end, then
-  drops the pending requests, closes the client side and half-closes the broker
-  side. Broker responses that arrive after that end or after a failed client
-  write are dropped without being recorded. Before that end, a complete client
-  frame that fails validation, an unknown response correlation, and a close,
-  reset or other I/O error on the broker side, with or without pending
-  requests, fail the check. The B3 offline signal link ends a connection
-  without a failure when its runner side closes or resets, half-closes toward
-  the observer on a clean runner end, and fails on errors while both sides are
-  open.
+  not fail the check. The observer records a response only after writing and
+  flushing it to the client. It reads the client stream to its end, then closes
+  the client side, also while a response write is blocked, half-closes the
+  broker side and drops the pending requests. Broker responses that arrive
+  after that end or after a failed client write are dropped without being
+  recorded. Before that end, a complete client frame that fails validation, an
+  unknown response correlation, and a close, reset or other I/O error on the
+  broker side, with or without pending requests, fail the check. The B3
+  offline signal link ends a connection without a failure when its runner side
+  closes or resets, half-closes toward the observer on a clean runner end, and
+  fails on errors while both sides are open.
 - Concept 20 section 6.1 and the TASK-020 B1 notes list the signed `tsx-runner`
   modes that exist. With the B3 site configuration, `agent`, `conform` and `run`
   handle signed bounded statistics. With the B1 configuration, `run` executes

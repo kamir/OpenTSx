@@ -256,11 +256,16 @@ close and a reset, between frames and inside a frame. It also covers a socket
 error while the observer writes a response to the client. Abandonment does not
 fail the check.
 
+The observer records a response, such as a Produce acknowledgement or the
+topic IDs of a Metadata response, only after it has written and flushed that
+response to the client. A response whose write fails is not recorded.
+
 The observer reads the client stream to its end and validates every complete
-frame. At that end it drops the pending requests of the connection. It closes
-the client side and shuts down its output toward the broker. Broker responses
-that arrive after that end, or after a failed write to the client, are read
-and dropped without being recorded.
+frame. At that end it closes the client side, even while a response write to
+that client is blocked. It shuts down its output toward the broker and drops
+the pending requests of the connection. Broker responses that arrive after
+that end, or after a failed write to the client, are read and dropped without
+being recorded.
 
 Before the observer reaches the end of the client stream, these errors fail
 the check:

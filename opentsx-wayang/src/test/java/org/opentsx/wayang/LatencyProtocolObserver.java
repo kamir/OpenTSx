@@ -27,6 +27,7 @@ import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -156,16 +157,16 @@ final class LatencyProtocolObserver implements AutoCloseable {
         } catch (Exception e) {
             if (!closing && !client.isClosed() && !broker.isClosed()) failure.compareAndSet(null, e);
         } finally {
-            synchronized (pending) {
-                clientEnded.set(true);
-                pending.clear();
-            }
+            clientEnded.set(true);
             closeSocket(client);
             // Half-close so the response thread reads the remaining responses; closing with unread data would reset the broker.
             try {
                 broker.shutdownOutput();
             } catch (IOException ended) {
                 closeSocket(broker);
+            }
+            synchronized (pending) {
+                pending.clear();
             }
         }
     }
@@ -176,25 +177,38 @@ final class LatencyProtocolObserver implements AutoCloseable {
             boolean clientGone = false;
             byte[] frame;
             while ((frame = readBrokerFrame(in)) != null) {
+                int correlation = ByteBuffer.wrap(frame).getInt();
+                Pending request;
                 synchronized (pending) {
-                    int correlation = ByteBuffer.wrap(frame).getInt();
                     if (clientEnded.get()) continue;
-                    Pending request = pending.get(correlation);
-                    if (request == null) throw new IllegalStateException("unknown response correlation " + correlation);
-                    // After a failed write to the client, later responses are dropped without being recorded.
-                    if (clientGone) {
-                        pending.remove(correlation);
-                        continue;
-                    }
-                    if (request.header.apiKey() == ApiKeys.METADATA) {
-                        frame = metadata(frame, request.header, server.getLocalPort(), topics);
-                    } else if (request.produce != null) {
-                        if (recordTopics != null) acknowledgeRecords(frame, request, System.nanoTime(), recordEntries, recordTopics);
-                        else if (decodeEpisodes) acknowledge(frame, request, System.nanoTime(), entries);
-                        else produceErrors.addAndGet(acknowledge(frame, request, System.nanoTime(), entries, false));
-                    }
-                    forwardResponse(toClient, frame, pending);
-                    clientGone = pending.remove(correlation) != null;
+                    request = pending.get(correlation);
+                }
+                if (request == null) throw new IllegalStateException("unknown response correlation " + correlation);
+                // After a failed write to the client, later responses are dropped without being recorded.
+                if (clientGone) {
+                    pending.remove(correlation);
+                    continue;
+                }
+                long acknowledged = System.nanoTime();
+                Map<Uuid, String> learned = new HashMap<>();
+                List<Entry> acknowledgedEntries = new ArrayList<>();
+                List<RecordEntry> acknowledgedRecords = new ArrayList<>();
+                long errors = 0;
+                if (request.header.apiKey() == ApiKeys.METADATA) {
+                    frame = metadata(frame, request.header, server.getLocalPort(), learned);
+                } else if (request.produce != null) {
+                    if (recordTopics != null) acknowledgeRecords(frame, request, acknowledged, acknowledgedRecords, recordTopics);
+                    else if (decodeEpisodes) acknowledge(frame, request, acknowledged, acknowledgedEntries);
+                    else errors = acknowledge(frame, request, acknowledged, acknowledgedEntries, false);
+                }
+                if (forwardResponse(toClient, frame, pending)) {
+                    topics.putAll(learned);
+                    entries.addAll(acknowledgedEntries);
+                    recordEntries.addAll(acknowledgedRecords);
+                    produceErrors.addAndGet(errors);
+                } else {
+                    clientGone = true;
+                    pending.remove(correlation);
                 }
             }
             throw new EOFException("broker closed the connection; pending requests: " + pending.size());
@@ -327,17 +341,14 @@ final class LatencyProtocolObserver implements AutoCloseable {
         out.flush();
     }
 
-    static void forwardResponse(DataOutputStream out, byte[] frame, Map<Integer, Pending> pending) throws IOException {
-        synchronized (pending) {
-            int correlation = ByteBuffer.wrap(frame).getInt();
-            if (!pending.containsKey(correlation)) throw new IllegalStateException("unknown response correlation " + correlation);
-            try {
-                writeFrame(out, frame);
-            } catch (SocketException closedClient) {
-                return;
-            }
-            pending.remove(correlation);
+    static boolean forwardResponse(DataOutputStream out, byte[] frame, Map<Integer, Pending> pending) throws IOException {
+        try {
+            writeFrame(out, frame);
+        } catch (SocketException closedClient) {
+            return false;
         }
+        pending.remove(ByteBuffer.wrap(frame).getInt());
+        return true;
     }
 
     private void closeSocket(Socket socket) {

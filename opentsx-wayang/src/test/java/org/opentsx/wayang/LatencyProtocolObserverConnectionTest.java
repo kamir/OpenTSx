@@ -11,6 +11,7 @@ import org.apache.kafka.common.record.SimpleRecord;
 import org.apache.kafka.common.requests.ProduceRequest;
 import org.apache.kafka.common.requests.RequestHeader;
 import org.junit.jupiter.api.Test;
+import org.opentsx.model.OpenTsxAvro;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -22,12 +23,14 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
+import java.time.Duration;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class LatencyProtocolObserverConnectionTest {
@@ -40,7 +43,11 @@ class LatencyProtocolObserverConnectionTest {
     }
 
     private static byte[] produce() {
-        MemoryRecords records = MemoryRecords.withRecords(Compression.NONE, new SimpleRecord(1, new byte[]{1}));
+        return produce(new byte[]{1});
+    }
+
+    private static byte[] produce(byte[] value) {
+        MemoryRecords records = MemoryRecords.withRecords(Compression.NONE, new SimpleRecord(1, value));
         ProduceRequestData data = new ProduceRequestData().setAcks((short) -1).setTimeoutMs(30000);
         data.topicData().add(new ProduceRequestData.TopicProduceData().setName("fixture").setPartitionData(List.of(
                 new ProduceRequestData.PartitionProduceData().setIndex(0).setRecords(records))));
@@ -67,12 +74,13 @@ class LatencyProtocolObserverConnectionTest {
         return backend;
     }
 
-    @Test
-    void lateProduceErrorAfterACleanClientCloseIsDroppedUnrecorded() throws Exception {
-        byte[] request = produce();
+    private static final byte[] EPISODE = new OpenTsxAvro().encode(IncrementLatencyTest.episode("e1", 0, new double[]{1, 2}));
+
+    private static LatencyProtocolObserver afterALateProduceResponse(boolean decodeEpisodes, short error) throws Exception {
+        byte[] request = produce(decodeEpisodes ? EPISODE : new byte[]{1});
         byte[] versions = request(ApiKeys.API_VERSIONS, 1, 64);
         try (ServerSocket backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress());
-             LatencyProtocolObserver observer = new LatencyProtocolObserver(backend.getLocalPort(), false)) {
+             LatencyProtocolObserver observer = new LatencyProtocolObserver(backend.getLocalPort(), decodeEpisodes)) {
             try (Socket client = connect(observer); Socket broker = backend.accept()) {
                 DataInputStream in = new DataInputStream(broker.getInputStream());
                 DataOutputStream out = new DataOutputStream(client.getOutputStream());
@@ -83,14 +91,114 @@ class LatencyProtocolObserverConnectionTest {
                 client.close();
                 assertEquals(-1, in.read());
                 DataOutputStream responses = new DataOutputStream(broker.getOutputStream());
-                LatencyProtocolObserver.writeFrame(responses, produced((short) 6));
+                LatencyProtocolObserver.writeFrame(responses, produced(error));
                 // This write completes only after the observer has read the Produce response before it.
                 LatencyProtocolObserver.writeFrame(responses, ByteBuffer.allocate(16 << 20).putInt(1).array());
             }
+            observer.check();
+            return observer;
+        }
+    }
+
+    @Test
+    void lateProduceErrorAfterACleanClientCloseIsDroppedUnrecorded() throws Exception {
+        LatencyProtocolObserver observer = afterALateProduceResponse(false, (short) 6);
+        assertEquals(1, observer.produceRecords.get());
+        assertEquals(0, observer.produceErrors.get());
+    }
+
+    @Test
+    void lateAcknowledgementAfterACleanClientCloseAddsNoEntry() throws Exception {
+        assertTrue(afterALateProduceResponse(true, (short) 0).entries.isEmpty());
+    }
+
+    // A 16 MiB Produce response cannot reach the closed client, so its own write fails.
+    private static LatencyProtocolObserver afterAFailedProduceResponseWrite(boolean decodeEpisodes, boolean reset, short error) throws Exception {
+        byte[] request = produce(decodeEpisodes ? EPISODE : new byte[]{1});
+        byte[] held = request(ApiKeys.API_VERSIONS, 1, 16 << 20);
+        try (ServerSocket backend = gatedBackend();
+             LatencyProtocolObserver observer = new LatencyProtocolObserver(backend.getLocalPort(), decodeEpisodes)) {
+            try (Socket client = connect(observer); Socket broker = backend.accept()) {
+                DataInputStream in = new DataInputStream(broker.getInputStream());
+                DataOutputStream out = new DataOutputStream(client.getOutputStream());
+                LatencyProtocolObserver.writeFrame(out, request);
+                LatencyProtocolObserver.writeFrame(out, held);
+                assertArrayEquals(request, LatencyProtocolObserver.readFrame(in));
+                assertEquals(held.length, in.readInt());
+                if (reset) client.setSoLinger(true, 0);
+                client.close();
+                DataOutputStream responses = new DataOutputStream(broker.getOutputStream());
+                LatencyProtocolObserver.writeFrame(responses, ByteBuffer.allocate(16 << 20).put(produced(error)).array());
+                LatencyProtocolObserver.writeFrame(responses, ByteBuffer.allocate(16 << 20).putInt(1).array());
+                assertEquals(held.length, in.transferTo(OutputStream.nullOutputStream()));
+            }
+            observer.check();
+            return observer;
+        }
+    }
+
+    @Test
+    void produceErrorWhoseWriteFailsIsNotRecorded() throws Exception {
+        for (boolean reset : new boolean[]{true, false}) {
+            LatencyProtocolObserver observer = afterAFailedProduceResponseWrite(false, reset, (short) 6);
             assertEquals(1, observer.produceRecords.get());
             assertEquals(0, observer.produceErrors.get());
-            assertTrue(observer.entries.isEmpty());
-            observer.check();
+        }
+    }
+
+    @Test
+    void acknowledgementWhoseWriteFailsAddsNoEntry() throws Exception {
+        for (boolean reset : new boolean[]{true, false}) assertTrue(afterAFailedProduceResponseWrite(true, reset, (short) 0).entries.isEmpty());
+    }
+
+    @Test
+    void clientEndWhileAResponseWriteIsBlockedEndsTheConnection() throws Exception {
+        byte[] request = request(ApiKeys.API_VERSIONS, 0, 64);
+        try (ServerSocket backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            LatencyProtocolObserver observer = new LatencyProtocolObserver(backend.getLocalPort(), false);
+            try (Socket client = new Socket()) {
+                client.setReceiveBufferSize(4096);
+                client.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), observer.server.getLocalPort()));
+                try (Socket broker = backend.accept()) {
+                    DataInputStream in = new DataInputStream(broker.getInputStream());
+                    LatencyProtocolObserver.writeFrame(new DataOutputStream(client.getOutputStream()), request);
+                    assertArrayEquals(request, LatencyProtocolObserver.readFrame(in));
+                    LatencyProtocolObserver.writeFrame(new DataOutputStream(broker.getOutputStream()), ByteBuffer.allocate(16 << 20).putInt(0).array());
+                    // The client reads only the length, so the observer stays blocked writing the 16 MiB response.
+                    assertEquals(16 << 20, new DataInputStream(client.getInputStream()).readInt());
+                    client.shutdownOutput();
+                    broker.setSoTimeout(10_000);
+                    assertEquals(-1, in.read());
+                }
+            }
+            assertTimeoutPreemptively(Duration.ofSeconds(10), observer::close);
+        }
+    }
+
+    @Test
+    void responsesAfterAFailedClientWriteAreStillValidated() throws Exception {
+        byte[] versions = request(ApiKeys.API_VERSIONS, 2, 64);
+        byte[] held = request(ApiKeys.API_VERSIONS, 1, 16 << 20);
+        try (ServerSocket backend = gatedBackend()) {
+            LatencyProtocolObserver observer = new LatencyProtocolObserver(backend.getLocalPort(), false);
+            try (Socket client = connect(observer); Socket broker = backend.accept()) {
+                DataInputStream in = new DataInputStream(broker.getInputStream());
+                DataOutputStream out = new DataOutputStream(client.getOutputStream());
+                LatencyProtocolObserver.writeFrame(out, versions);
+                LatencyProtocolObserver.writeFrame(out, held);
+                assertArrayEquals(versions, LatencyProtocolObserver.readFrame(in));
+                assertEquals(held.length, in.readInt());
+                client.close();
+                DataOutputStream responses = new DataOutputStream(broker.getOutputStream());
+                LatencyProtocolObserver.writeFrame(responses, ByteBuffer.allocate(16 << 20).putInt(2).array());
+                LatencyProtocolObserver.writeFrame(responses, ByteBuffer.allocate(8).putInt(9).array());
+                // The gate stays closed; this write fails only because the observer ended the connection after the unknown correlation.
+                assertThrows(SocketException.class,
+                        () -> LatencyProtocolObserver.writeFrame(responses, ByteBuffer.allocate(16 << 20).putInt(1).array()));
+            }
+            IllegalStateException failure = assertThrows(IllegalStateException.class, observer::check);
+            assertEquals("unknown response correlation 9", failure.getCause().getMessage());
+            assertThrows(IllegalStateException.class, observer::close);
         }
     }
 
