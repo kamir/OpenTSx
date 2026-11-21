@@ -92,9 +92,10 @@ def gitlink_findings(root: pathlib.Path) -> list[str]:
     for path in gitlinks(root):
         top = prefix + path
         if top not in known:
-            findings.append(f"{path}: gitlink without a .gitmodules entry; add one with git config -f .gitmodules "
-                            f"submodule.{top}.path {top}, git config -f .gitmodules submodule.{top}.url <url> and "
-                            f"git add .gitmodules, or remove it with git rm --cached {top}")
+            findings.append(f"{path}: gitlink without a .gitmodules entry; at the top level of the repository, add "
+                            f"one with git config -f .gitmodules submodule.{top}.path {top}, git config -f "
+                            f".gitmodules submodule.{top}.url <url> and git add .gitmodules, or remove it with git rm "
+                            f"--cached {top}")
     return findings
 
 

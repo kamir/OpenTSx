@@ -17,11 +17,11 @@ GRAFANA = LG / "src" / "main" / "mqtt-example" / "influxdb-grafana" / "__run_con
 GRAFANA_CONTAINER = "docker-influxdb-grafana"
 GRAFANA_PASSWORD = "test-password-0x1"
 CI = ROOT / ".github" / "workflows" / "ci.yml"
-CD = re.compile(r"(?:^|[;&|({]|\b(?:then|do|else)\s)\s*(?:(?:!|command|builtin|time)\s+)*cd(?=\s|$)")
-CD_GUARD = re.compile(r"(?:[<>]&|&>|[^;&|])*\|\|\s*(?:exit|return)\b")
+CD = re.compile(r"(?:^|[;&({]|(?<!>)\||\b(?:then|do|else)\s)\s*(?:(?:!|command|builtin|time)\s+)*cd(?=\s|$)")
+CD_GUARD = re.compile(r"(?:[<>]&|&>|>\||[^;&|])*\|\|\s*(?:exit|return)\b")
 SHELL = re.compile(r"""'[^']*'|"(?:\\.|[^"\\])*"|\\.|(?P<comment>(?<![^\s;&|()])#.*)""")
-SEPARATOR = re.compile(r"&&|\|\||(?<![<>])&(?!>)|[;|]")
-# unquoted() masks a closing backtick as ")".
+SEPARATOR = re.compile(r"&&|\|\||(?<![<>])&(?!>)|;|(?<!>)\|")
+# unquoted() masks a closing backtick as ")"; views() shows the inside of a substitution as "_".
 SUBSTITUTION = r"\$\([^()]*\)|`[^`()]*\)"
 WORD_PIECE = rf"(?:{SUBSTITUTION}|(?!{SUBSTITUTION})\S)"
 VALUE_PIECE = rf"(?:{SUBSTITUTION}|(?!{SUBSTITUTION})[^\s;&|()<>])"
@@ -33,21 +33,25 @@ NUMBER = r"[0-9][0-9.]*[smhd]?"
 KEYWORD = (r"(?:!|time|command(?!(?:\s+-[pvV]+)*\s+-[pvV]*[vV][pvV]*\s)|builtin|exec|nohup|sudo|env|nice|ionice"
            r"|timeout|xargs|if|elif|then|else|do|while|until)")
 ASSIGNMENT = r"[A-Za-z_][A-Za-z0-9_]*="
-OPTION = r"-" + WORD_PIECE + r"+(?:\s+(?!-)" + VALUE_PIECE + r"+)?"
-# unquoted() masks the double quotes of "$(cat t)" as "_".
-TIMEOUT = r"timeout(?:\s+" + OPTION + r")*\s+_*(?:" + SUBSTITUTION + r")_*"
-# A word that another alternative reads is never an option value and a timeout with a substitution is no keyword, so
-# each word has one reading and a line without a command word fails in linear time.
-COMMAND_WORD = (r"(?:(?:^|(?<=[;&|{])|(?<=\sin\s)(?=\s*" + CASE_ARM + r"))\s*(?:" + CASE_ARM + r")?|(?<=[(`])\s*)"
+TIMEOUT_VALUE_OPTION = r"(?:-[ks]|--(?:kill-after|signal))"
+OPTION = (r"(?:" + TIMEOUT_VALUE_OPTION + r"\s+" + VALUE_PIECE + r"+|(?!" + TIMEOUT_VALUE_OPTION + r"\s)-" + WORD_PIECE
+          + r"+)")
+VARIABLE = r"\$(?:[A-Za-z_][A-Za-z0-9_]*(?![A-Za-z0-9_])|[0-9]|\{[^{}\s]+\})"
+# unquoted() masks a quoted word such as "$(cat t)" or "${T}" as "_" apart from a substitution.
+TIMEOUT = (r"timeout(?:\s+" + OPTION + r")*\s+(?:_*(?:" + SUBSTITUTION + "|" + VARIABLE + r")_*|_+)[smhd]?")
+# A word that another alternative reads is never an option value and a TIMEOUT match is no keyword, so each word has
+# one reading and a line without a command word fails in linear time.
+COMMAND_WORD = (r"(?:(?:^|(?<=[;&{])|(?<=\|)(?<!>\|)|(?<=\sin\s)(?=\s*" + CASE_ARM + r"))\s*(?:" + CASE_ARM + r")?"
+                r"|(?<=[(`])\s*)"
                 r"(?:(?:" + ASSIGNMENT + WORD_PIECE + r"*|" + TIMEOUT + r"|-" + WORD_PIECE + r"+(?:\s+(?!-|(?:"
                 + NUMBER + "|" + KEYWORD + r")\s|" + ASSIGNMENT + r")" + VALUE_PIECE + r"+)?|" + NUMBER + "|(?!"
                 + TIMEOUT + r"\s)" + KEYWORD + r")\s+)*")
 INSTALL = re.compile(COMMAND_WORD + r"(?:[^\s;&|()<>]*/)?(?P<tool>docker\s+(?:" + DOCKER_GLOBAL + r")*(?P<word>"
                      + VALUE_PIECE + r"+)|confluent-hub\s+install\s|confluent\s+connect\s+plugin\s+install\s)")
-DOCKER_INSTALL = r"(?:(?:container\s+)?(?:run|create)|(?:image\s+)?pull)\s"
+DOCKER_INSTALL = r"(?:(?:container\s+)?(?:run|create)|(?:image\s+)?pull)(?=\s|[<>]|&>)"
 SUBCOMMAND = re.compile(DOCKER_INSTALL)
 OPTIONS_BEFORE_SUBCOMMAND = re.compile(r"(?:-[^\s=]+(?:=\S*|(?:\s+[^\s-]\S*)?)\s+)+" + DOCKER_INSTALL)
-ARGUMENT_PIECE = re.compile(r"(?P<redirection>(?:(?<!\S)[0-9]+)?(?:&>>?|[<>]&|>>|<<<?|<>|[<>])\s*" + VALUE_PIECE
+ARGUMENT_PIECE = re.compile(r"(?P<redirection>(?:(?<!\S)[0-9]+)?(?:&>>?|[<>]&|>>|>\||<<<?|<>|[<>])\s*" + VALUE_PIECE
                             + r"*)|" + SUBSTITUTION + r"|.", re.S)
 LITERAL = re.compile(r"[\w.-]+")
 VALUE_OPTIONS = {"-p", "--publish", "-v", "--volume", "-e", "--env", "--env-file", "--name", "--network", "--restart",
@@ -160,30 +164,72 @@ def substitution_end(line: str, position: int) -> int:
     return len(line)
 
 
-def join_substitutions(text: str) -> str:
-    joined, stack, i = list(text), [], 0
+def nesting(text: str, literal: frozenset[int] = frozenset()) -> list[int]:
+    levels, stack, depth, i = [0] * len(text), [], 0, 0
     while i < len(text):
-        c, top = text[i], stack[-1] if stack else None
-        if c.isspace() and ("(" in stack or "`" in stack):
-            joined[i] = "\0"
-        elif top == "'":
+        c, top = text[i], stack[-1][0] if stack else None
+        levels[i:i + 2] = [depth] * len(text[i:i + 2])
+        if top == "'":
             if c == "'":
                 stack.pop()
         elif c == "\\":
             i += 1
         elif top == '"' and c == '"':
             stack.pop()
-        elif text.startswith("$(", i):
-            stack.append("(")
-            i += 1
-        elif c == "(" and top != '"':
-            stack.append("(")
+        elif text.startswith("$(", i) or (c == "(" and top != '"'):
+            i += c == "$"
+            if i not in literal:
+                stack.append(("(", i))
+                depth += 1
         elif (c == ")" and top == "(") or (c == "`" and top == "`"):
             stack.pop()
-        elif c == "`" or (c in "\"'" and top != '"'):
-            stack.append(c)
+            depth -= 1
+            levels[i] = depth
+        elif (c == "`" or (c in "\"'" and top != '"')) and i not in literal:
+            stack.append((c, i))
+            depth += c == "`"
         i += 1
-    return "".join(joined)
+    # An unclosed quote, backtick or parenthesis stays a plain character, as in unquoted().
+    return nesting(text, literal | {position for _, position in stack}) if stack else levels
+
+
+def join_substitutions(text: str) -> str:
+    return "".join("\0" if c.isspace() and level else c for c, level in zip(text, nesting(text)))
+
+
+def views(masked: str, levels: list[int]) -> list[tuple[str, list[int], int]]:
+    """The top level and the inside of each substitution, each as text in which a substitution inside it is "_", with
+    the position in the line of each character and of the end, and the index where the inside starts (after the
+    opening "(" or backtick, kept for the lookbehinds)."""
+    ends, runs = {}, []
+    for i, level in enumerate(levels + [0]):
+        while runs and level < levels[runs[-1]]:
+            ends[runs.pop()] = i
+        if i < len(levels) and level > (levels[i - 1] if i else 0):
+            runs.append(i)
+    result, spans = [], [(0, len(masked), 0)]
+    while spans:
+        start, stop, depth = spans.pop()
+        text, positions, i = [masked[start - 1:start]], [start - 1] if start else [], start
+        while i < stop:
+            positions.append(i)
+            if levels[i] > depth:
+                text.append("_")
+                spans.append((i, ends[i], depth + 1))
+                i = ends[i]
+            else:
+                text.append(masked[i])
+                i += 1
+        result.append(("".join(text), positions + [stop], len(text[0])))
+    return result
+
+
+def parts(view: str, start: int) -> list[tuple[int, int]]:
+    found = []
+    for separator in SEPARATOR.finditer(view, start):
+        found.append((start, separator.start()))
+        start = separator.end()
+    return found + [(start, len(view))]
 
 
 def takes_the_next_word(prefix: str) -> bool:
@@ -210,11 +256,8 @@ def takes_the_next_word(prefix: str) -> bool:
 
 
 def commands(line: str) -> list[tuple[int, str]]:
-    parts, start = [], 0
-    for separator in SEPARATOR.finditer(unquoted(line)):
-        parts.append((start, line[start:separator.start()]))
-        start = separator.end()
-    return parts + [(start, line[start:])]
+    view, positions, _ = views(unquoted(line), nesting(line))[0]
+    return [(positions[start], line[positions[start]:positions[stop]]) for start, stop in parts(view, 0)]
 
 
 def logical_lines(text: str):
@@ -275,46 +318,46 @@ def image_problems(root: pathlib.Path, name: str) -> list[str]:
         else:
             references = []
             line = uncommented(line)
-            masked = unquoted(line)
-            for start, command in commands(line):
-                stop = start + len(command)
-                installs, position = {}, start
-                while install := INSTALL.search(masked, position, stop):
-                    installs.setdefault(install.start("tool"), install)
-                    position = install.start() + 1
-                for _, install in sorted(installs.items()):
-                    if takes_the_next_word(masked[install.start():install.start("tool")]):
+            installs = {}
+            for view, positions, inside in views(unquoted(line), nesting(line)):
+                for start, stop in parts(view, inside):
+                    position = start
+                    while install := INSTALL.search(view, position, stop):
+                        installs.setdefault(positions[install.start("tool")], (install, view, positions, stop))
+                        position = install.start() + 1
+            for _, (install, view, positions, end) in sorted(installs.items()):
+                if takes_the_next_word(view[install.start():install.start("tool")]):
+                    continue
+                begin = install.end()
+                if install.group("word") is not None:
+                    first, last = install.span("word")
+                    word = line[positions[first]:positions[last]]
+                    subcommand = SUBCOMMAND.match(view, first, end)
+                    if not subcommand:
+                        if word.startswith("-"):
+                            joined = unquoted(join_substitutions(line[positions[first]:positions[end]]))
+                            if word not in DOCKER_INFO and OPTIONS_BEFORE_SUBCOMMAND.match(joined):
+                                problems.append(f"{name}:{number}: {word}: unknown docker option before the "
+                                                "subcommand; add it to DOCKER_GLOBAL in tools/test_lg_scripts.py")
+                        elif not LITERAL.fullmatch(word):
+                            problems.append(f"{name}:{number}: {word}: the check cannot read a docker command whose "
+                                            "subcommand is not a literal word; write the docker options and the "
+                                            "subcommand literally")
                         continue
-                    begin = install.end()
-                    if install.group("word") is not None:
-                        first, last = install.span("word")
-                        limit = min(stop, substitution_end(line, first))
-                        word = line[first:last]
-                        subcommand = SUBCOMMAND.match(masked, first, limit)
-                        if not subcommand:
-                            if word.startswith("-"):
-                                joined = unquoted(join_substitutions(line[first:limit]))
-                                if word not in DOCKER_INFO and OPTIONS_BEFORE_SUBCOMMAND.match(joined):
-                                    problems.append(f"{name}:{number}: {word}: unknown docker option before the "
-                                                    "subcommand; add it to DOCKER_GLOBAL in tools/test_lg_scripts.py")
-                            elif not LITERAL.fullmatch(word):
-                                problems.append(f"{name}:{number}: {word}: the check cannot read a docker command "
-                                                "whose subcommand is not a literal word; write the docker options and "
-                                                "the subcommand literally")
-                            continue
-                        begin = subcommand.end()
-                    end = min(stop, substitution_end(line, begin))
-                    arguments = list(line[begin:end])
-                    for piece in ARGUMENT_PIECE.finditer(masked, begin, end):
-                        if piece.group("redirection") is not None:
-                            arguments[piece.start() - begin:piece.end() - begin] = " " * len(piece.group())
-                    try:
-                        words = shlex.split(join_substitutions("".join(arguments)))
-                        references.append(first_operand([word.replace("\0", " ") for word in words]))
-                    except ValueError as error:
-                        tool = line[install.start("tool"):begin].strip()
-                        problems.append(f"{name}:{number}: {tool}: cannot split the arguments into words ({error}); "
-                                        "close every quote on the line")
+                    begin = subcommand.end()
+                offset = positions[begin]
+                arguments = list(line[offset:positions[end]])
+                for piece in ARGUMENT_PIECE.finditer(view, begin, end):
+                    if piece.group("redirection") is not None:
+                        blank = slice(positions[piece.start()] - offset, positions[piece.end()] - offset)
+                        arguments[blank] = " " * (blank.stop - blank.start)
+                try:
+                    words = shlex.split(join_substitutions("".join(arguments)))
+                    references.append(first_operand([word.replace("\0", " ") for word in words]))
+                except ValueError as error:
+                    tool = line[positions[install.start("tool")]:offset].strip()
+                    problems.append(f"{name}:{number}: {tool}: cannot split the arguments into words ({error}); "
+                                    "close every quote on the line")
         for reference, option in references:
             if option:
                 problems.append(f"{name}:{number}: {option}: unknown option before the image; "
@@ -597,10 +640,146 @@ def test_a_redirection_is_no_part_of_the_image(tmp_path):
         "run.sh:3: toke/mosquitto: no exact version; pin a version such as 1.2.3 or a sha256 digest"]
 
 
+def test_a_redirection_right_after_the_subcommand_ends_it_and_is_no_part_of_the_image(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "docker pull>/dev/null toke/mosquitto\n"
+        "docker run>cid.txt -d toke/mosquitto\n"
+        "docker run</dev/null -d toke/mosquitto\n"
+        "docker pull&>/dev/null toke/mosquitto\n"
+        "docker --context x pull>/dev/null toke/mosquitto\n"
+        "docker info>/dev/null\n"
+        "docker pull>/dev/null img:1.2.3\n"
+        "docker --foo pull>/dev/null img:1.2.3\n", encoding="utf-8")
+    rest = "no exact version; pin a version such as 1.2.3 or a sha256 digest"
+    unknown = "unknown docker option before the subcommand; add it to DOCKER_GLOBAL in tools/test_lg_scripts.py"
+    assert image_problems(tmp_path, "run.sh") == [
+        f"run.sh:2: toke/mosquitto: {rest}",
+        f"run.sh:3: toke/mosquitto: {rest}",
+        f"run.sh:4: toke/mosquitto: {rest}",
+        f"run.sh:5: toke/mosquitto: {rest}",
+        f"run.sh:6: toke/mosquitto: {rest}",
+        f"run.sh:9: --foo: {unknown}",
+    ]
+
+
+def test_a_substitution_may_hold_further_substitutions(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "X=`echo $(date)` docker pull toke/mosquitto\n"
+        "sudo -u `basename $(pwd)` docker pull toke/mosquitto\n"
+        'X=`cat "$(dirname $0)/v"` docker pull toke/mosquitto\n'
+        "$(echo `date`) docker pull x\n"
+        "docker --foo $(echo $(id -u)) pull toke/mosquitto\n"
+        "docker --context $(cat $(echo f)) pull toke/mosquitto\n"
+        "X=$(echo $(date)) docker pull toke/mosquitto\n"
+        "sudo -u $(basename $(pwd)) docker pull toke/mosquitto\n"
+        "timeout $(echo $(cat t)) docker pull toke/mosquitto\n"
+        "echo $(echo $(date)) docker pull x\n"
+        "X=$(echo `date`) docker pull toke/mosquitto\n"
+        "X=$(a $(b $(c))) docker pull toke/mosquitto\n"
+        "$(a $(b `c`)) docker pull x\n"
+        "X=$(a $(docker pull e) $(b `docker pull f`)) docker pull img:1.2.3\n"
+        "echo $(a $(b $(c | $(docker pull g; echo))))\n", encoding="utf-8")
+    rest = "no exact version; pin a version such as 1.2.3 or a sha256 digest"
+    unknown = "unknown docker option before the subcommand; add it to DOCKER_GLOBAL in tools/test_lg_scripts.py"
+    assert image_problems(tmp_path, "run.sh") == [
+        f"run.sh:2: toke/mosquitto: {rest}",
+        f"run.sh:3: toke/mosquitto: {rest}",
+        f"run.sh:4: toke/mosquitto: {rest}",
+        f"run.sh:6: --foo: {unknown}",
+        f"run.sh:7: toke/mosquitto: {rest}",
+        f"run.sh:8: toke/mosquitto: {rest}",
+        f"run.sh:9: toke/mosquitto: {rest}",
+        f"run.sh:10: toke/mosquitto: {rest}",
+        f"run.sh:12: toke/mosquitto: {rest}",
+        f"run.sh:13: toke/mosquitto: {rest}",
+        f"run.sh:15: e: {rest}",
+        f"run.sh:15: f: {rest}",
+        f"run.sh:16: g: {rest}",
+    ]
+
+
+def test_a_separator_inside_a_substitution_does_not_end_the_command_around_it(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "X=$(cat f | head -1) docker pull toke/mosquitto\n"
+        "sudo -u $(getent passwd 1000 | cut -d: -f1) docker pull toke/mosquitto\n"
+        "X=$(cat f; echo) docker pull toke/mosquitto\n"
+        'X="$(cat f && echo)" docker pull toke/mosquitto\n'
+        "X=$(docker pull a | tee x) docker pull b\n"
+        "X=$(docker pull c; docker pull d) docker pull img:1.2.3\n"
+        "X=$(echo a; docker pull e | tee x; echo b) && docker pull f\n"
+        "X=$(a;b docker pull x) docker pull img:1.2.3\n"
+        "X=`cat f | head -1` docker pull toke/mosquitto\n", encoding="utf-8")
+    rest = "no exact version; pin a version such as 1.2.3 or a sha256 digest"
+    assert image_problems(tmp_path, "run.sh") == [
+        f"run.sh:2: toke/mosquitto: {rest}",
+        f"run.sh:3: toke/mosquitto: {rest}",
+        f"run.sh:4: toke/mosquitto: {rest}",
+        f"run.sh:5: toke/mosquitto: {rest}",
+        f"run.sh:6: a: {rest}",
+        f"run.sh:6: b: {rest}",
+        f"run.sh:7: c: {rest}",
+        f"run.sh:7: d: {rest}",
+        f"run.sh:8: e: {rest}",
+        f"run.sh:8: f: {rest}",
+        f"run.sh:10: toke/mosquitto: {rest}",
+    ]
+    assert [c for _, c in commands("X=$(cat f | head -1) docker pull a && b; c")] == [
+        "X=$(cat f | head -1) docker pull a ", " b", " c"]
+
+
+def test_a_variable_or_a_substitution_with_a_unit_is_the_duration_of_timeout(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "timeout $T docker pull toke/mosquitto\n"
+        "timeout ${T} docker pull toke/mosquitto\n"
+        'timeout "${T}" docker pull toke/mosquitto\n'
+        'timeout "$T" docker pull toke/mosquitto\n'
+        "timeout $(cat t)s docker pull toke/mosquitto\n"
+        "timeout -k 5 ${T}m docker pull toke/mosquitto\n"
+        "$T docker pull x\n"
+        "echo $T docker pull x\n"
+        "timeout ${T:-30} docker pull toke/mosquitto\n"
+        "timeout $1 docker pull toke/mosquitto\n", encoding="utf-8")
+    rest = "no exact version; pin a version such as 1.2.3 or a sha256 digest"
+    assert image_problems(tmp_path, "run.sh") == [
+        f"run.sh:2: toke/mosquitto: {rest}",
+        f"run.sh:3: toke/mosquitto: {rest}",
+        f"run.sh:4: toke/mosquitto: {rest}",
+        f"run.sh:5: toke/mosquitto: {rest}",
+        f"run.sh:6: toke/mosquitto: {rest}",
+        f"run.sh:7: toke/mosquitto: {rest}",
+        f"run.sh:10: toke/mosquitto: {rest}",
+        f"run.sh:11: toke/mosquitto: {rest}",
+    ]
+
+
+def test_a_clobber_redirection_is_no_separator(tmp_path):
+    (tmp_path / "run.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "docker pull img:1.2.3 >| out\n"
+        "docker pull >| out toke/mosquitto\n"
+        "docker pull>|out toke/mosquitto\n"
+        "echo >|docker pull x\n"
+        "echo >| docker pull x\n", encoding="utf-8")
+    assert image_problems(tmp_path, "run.sh") == [
+        "run.sh:3: toke/mosquitto: no exact version; pin a version such as 1.2.3 or a sha256 digest",
+        "run.sh:4: toke/mosquitto: no exact version; pin a version such as 1.2.3 or a sha256 digest",
+    ]
+    assert [c for _, c in commands("docker pull img >| out")] == ["docker pull img >| out"]
+    (tmp_path / "cd.sh").write_text("#!/usr/bin/env bash\ncd x >| out || exit 1\ncd y >| out\necho a >|cd z\n",
+                                    encoding="utf-8")
+    assert script_problems(tmp_path, "cd.sh") == ["cd.sh:3: cd without a guard; write cd y >| out || exit 1"]
+
+
 def test_option_and_number_words_without_a_command_word_are_read_in_linear_time(tmp_path):
     (tmp_path / "run.sh").write_text(
         "#!/usr/bin/env bash\nnice " + "-n 5 " * 22 + "foo\nsudo " + "-u env " * 22 + "foo\n"
-        + "timeout -k $(cat t) " * 22 + "foo\n", encoding="utf-8")
+        + "timeout -k $(cat t) " * 22 + "foo\n" + "timeout -k $T " * 22 + "foo\n" + "X=$(a | b; c && d) " * 22
+        + "foo\n" + "$(a " * 22 + "foo\n" + "timeout $Ts " * 22 + "foo\n" + "timeout -k $T -s $T " * 22 + "foo\n"
+        + 'timeout -k "a" -s "b" ' * 22 + "foo\n", encoding="utf-8")
     start = time.perf_counter()
     assert image_problems(tmp_path, "run.sh") == []
     assert time.perf_counter() - start < 0.1

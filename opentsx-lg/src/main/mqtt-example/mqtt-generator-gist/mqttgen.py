@@ -152,10 +152,6 @@ def main(config_path):
     generate(host, port, username, password, topic, sensors, interval_ms, verbose)
 
 
-
-
-
-
 if __name__ == '__main__':
     if len(sys.argv) == 2:
         try:

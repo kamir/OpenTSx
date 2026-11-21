@@ -56,8 +56,9 @@ A `cd` in a command substitution inside double quotes, as in `X="$(cd b)"`, is s
 the quotes inside the substitution, so `DIR="$(cd "$(dirname "$0")" || exit 1; pwd)"` passes. The suggested fix ends
 at the end of the substitution or subshell, so `X="$(cd b)"` gives
 `<file>:<line>: cd without a guard; write cd b || exit 1`. The `&` of a redirection, as in `2>&1`, `>&2` or
-`&>/dev/null`, does not end the `cd`, so `cd x 2>&1 || exit 1` passes and `cd x 2>&1` gives
-`<file>:<line>: cd without a guard; write cd x 2>&1 || exit 1`.
+`&>/dev/null`, and the `|` of `>|` do not end the `cd`, so `cd x 2>&1 || exit 1` and `cd x >| log || exit 1` pass and
+`cd x 2>&1` gives `<file>:<line>: cd without a guard; write cd x 2>&1 || exit 1`. The `|` of `>|` starts no `cd`
+either, so in `echo a >|cd x` the `cd` is the file that `>|` writes.
 `tools/test_lg_python.py` fails on a Python script (`*.py`) of this module that
 does not compile or does not start with `#!/usr/bin/env python3`.
 
@@ -120,16 +121,21 @@ Docker Hub has no version tag for the image that `latest` names in these two rep
 digest. `tools/test_lg_scripts.py` reads the image or connector of every `docker run`, `docker create`, `docker pull`,
 `docker container run`, `docker container create`, `docker image pull`, `confluent-hub install` and
 `confluent connect plugin install` in the scripts of this module, also after `&&`, `||`, `;`, `|` or a single `&` on
-the same line, and of every `FROM` in its Dockerfiles. The `&` of a redirection, as in `2>&1`, `>&2` or `&>log`, does
-not end a command. It reads `docker`, `confluent-hub` and `confluent` only as the command word, also with a path
+the same line, and of every `FROM` in its Dockerfiles. The `&` of a redirection, as in `2>&1`, `>&2` or `&>log`, and
+the `|` of `>|` do not end a command. A `&&`, `||`, `;`, `|` or `&` inside a command substitution ends only the
+command inside it, so `X=$(cat f | head -1) docker pull <image>` is read. It reads `docker`, `confluent-hub` and
+`confluent` only as the command word, also with a path
 such as `/usr/bin/docker`: at the start of a command, of a `case` arm such as `start)`, `(start)` or
 `` `hostname`) ``, of a command substitution, of a subshell or of a `{` group, also after variable assignments,
 options (words that start with `-`, with or without one value), a number or duration such as `10` or `5s`, and the
 words `!`, `time`, `command`, `builtin`, `exec`, `nohup`, `sudo`, `env`, `nice`, `ionice`, `timeout`, `xargs`, `if`,
 `elif`, `then`, `else`, `do`, `while` and `until`. The value of an assignment or an option may hold a command
-substitution, as in `X=$(cat f) docker pull <image>`, `sudo -u $(whoami) docker pull <image>` or
-``X=`cat f` docker pull <image>``. The duration of `timeout` may be a command substitution, also in double quotes, as in
-`timeout $(cat t) docker pull <image>` or `timeout "$(cat t)" docker pull <image>`.
+substitution, also one that holds further substitutions, as in `X=$(cat f) docker pull <image>`,
+`sudo -u $(whoami) docker pull <image>`, ``X=`cat f` docker pull <image>`` or
+``X=`echo $(date)` docker pull <image>``. The duration of `timeout` may be a variable, also a positional parameter or
+one with a default value, or a command substitution, also in double quotes or with a unit, as in
+`timeout $T docker pull <image>`, `timeout ${T:-30} docker pull <image>`, `timeout $1 docker pull <image>`,
+`timeout "${T}" docker pull <image>`, `timeout $(cat t) docker pull <image>` or `timeout $(cat t)s docker pull <image>`.
 An option of `sudo`, `env`, `nice`, `ionice`, `timeout`, `xargs` or `exec` that takes a value,
 such as `-u` of `sudo` or `-n` of `nice`, takes the next word as its value, so `sudo -u docker pull <image>`, which
 runs `pull` as the user `docker`, is not read. `-S` and `--split-string` of `env` take the command as their value, so
@@ -146,8 +152,9 @@ fails on any other option between `docker` and a subcommand it reads, also on th
 `--tlsverify=true`, except `-v`, `--version`, `-h` and `--help`, with
 `<file>:<line>: <option>: unknown docker option before the subcommand; add it to DOCKER_GLOBAL in tools/test_lg_scripts.py`.
 It reads each such option with at most one value word, a word that does not start with `-`, and with none when the
-option has `=`. A command substitution is one value word, also with blanks inside, as in
-`docker --foo $(cat v) pull <image>` or ``docker --foo `date +%s` pull <image>``. So `docker --foo pull <image>` and
+option has `=`. A command substitution is one value word, also with blanks or further substitutions inside, as in
+`docker --foo $(cat v) pull <image>`, ``docker --foo `date +%s` pull <image>`` or
+`docker --foo $(echo $(id -u)) pull <image>`. So `docker --foo pull <image>` and
 `docker --foo bar pull <image>` are a finding, and `docker -x foo bar pull <image>`, whose subcommand is `bar`, and
 `docker --x=1 ps pull <image>` are not. The finding names the option as the line writes it, as in `--label="a b"`.
 It fails on a `docker` command whose subcommand is not a literal word of letters, digits, `_`, `.` and `-`, as in
@@ -155,7 +162,8 @@ It fails on a `docker` command whose subcommand is not a literal word of letters
 `<file>:<line>: <word>: the check cannot read a docker command whose subcommand is not a literal word; write the docker options and the subcommand literally`.
 The subcommand ends at a blank, at `;`, `&`, `|`, `(`, `)`, `<`, `>` and at the backtick that closes a substitution,
 so `[ "$(docker info)" ]`, `` IDS=`docker ps` `` and `docker info>/dev/null` have the literal subcommands `info` and
-`ps`. A command substitution in the subcommand is named whole, as in `$(echo pull)`.
+`ps`, and `docker pull>/dev/null <image>` reads the subcommand `pull` and the image. A command substitution in the
+subcommand is named whole, as in `$(echo pull)`.
 It fails when an image or connector has no exact version, such as `1.2.3`, and no sha256 digest.
 It also fails on an option before the image that it does not know, with
 `<file>:<line>: <option>: unknown option before the image; add it to the option lists of tools/test_lg_scripts.py`,
@@ -163,15 +171,19 @@ on a command whose arguments do not split into words, for example at a quote tha
 `<file>:<line>: <command>: cannot split the arguments into words (<cause>); close every quote on the line`,
 and on a Dockerfile `RUN` that runs `apt-get update` without `apt-get install`. A command substitution without quotes
 in an argument, as in `docker run -e X=$(date +%s) <image>`, is one word for the check. A redirection such as `>out`,
-`2>&1` or `<<<x` is no argument, also before the image or directly after it, so `docker run >log -d img:1.2.3` and
-`docker pull img:1.2.3>out` read the image `img:1.2.3`. A command inside quotes, as in
+`>|out`, `2>&1` or `<<<x` is no argument, also directly after the subcommand, before the image or directly after it,
+so `docker run>log -d img:1.2.3`, `docker run >log -d img:1.2.3` and `docker pull img:1.2.3>out` read the image
+`img:1.2.3`. A command inside quotes, as in
 `echo "use docker pull x"`, is not read. A command in a command substitution or a subshell, as in
 `CID=$(docker run <image>)`, `CID="$(docker run <image>)"` or `(docker pull <image>)`, is read up to the end of the
 substitution or subshell, also after `&&`, `||`, `;`, `|` or `&` inside it, and so is each further substitution of the
 same command, as in `echo $(docker pull <image>) $(docker pull <image>)`. A command substitution inside an argument of
 an install is read too, so `docker run -e "X=$(docker pull <image>)" <image>` gives a finding for each of the two
 images that has no exact version, and so is one in the value of an assignment before a command it reads, as in
-`X=$(docker pull <image>) docker pull <image>`.
+`X=$(docker pull <image>) docker pull <image>`. A command in a substitution inside a substitution is read at any depth,
+as in `echo $(a $(docker pull <image>))`. Each command is read once, so
+`X=$(docker pull <image> | tee log) docker pull <image>` gives one finding for each of the two images that has no
+exact version.
 
 `mqtt-generator-gist/mqttgen.py` uses the 1.x client API of `paho-mqtt`. With paho-mqtt 2.0.0 it stops with
 `TypeError: Client.__init__() missing 1 required positional argument: 'callback_api_version'`. Before it connects, it

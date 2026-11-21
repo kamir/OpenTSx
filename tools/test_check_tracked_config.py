@@ -219,8 +219,8 @@ def test_a_gitlink_without_a_submodule_entry_fails(tmp_path):
         result = run_guard(gitlink_repository(tmp_path / name, modules))
         assert result.returncode == 1, result.stdout + result.stderr
         assert result.stdout.splitlines() == [
-            "dir/sub: gitlink without a .gitmodules entry; add one with git config -f .gitmodules "
-            "submodule.dir/sub.path dir/sub, git config -f .gitmodules submodule.dir/sub.url <url> and "
+            "dir/sub: gitlink without a .gitmodules entry; at the top level of the repository, add one with git config "
+            "-f .gitmodules submodule.dir/sub.path dir/sub, git config -f .gitmodules submodule.dir/sub.url <url> and "
             "git add .gitmodules, or remove it with git rm --cached dir/sub",
             f"checked {files} tracked files, 1 findings"]
 
@@ -287,10 +287,36 @@ def test_a_root_below_the_top_level_reads_the_top_level_submodule_entries(tmp_pa
     result = run_guard(repository / "dir")
     assert result.returncode == 1, result.stdout + result.stderr
     assert result.stdout.splitlines() == [
-        "stray: gitlink without a .gitmodules entry; add one with git config -f .gitmodules "
-        "submodule.dir/stray.path dir/stray, git config -f .gitmodules submodule.dir/stray.url <url> and "
+        "stray: gitlink without a .gitmodules entry; at the top level of the repository, add one with git config -f "
+        ".gitmodules submodule.dir/stray.path dir/stray, git config -f .gitmodules submodule.dir/stray.url <url> and "
         "git add .gitmodules, or remove it with git rm --cached dir/stray",
         "checked 2 tracked files, 1 findings"]
+
+
+def test_the_advice_for_a_root_below_the_top_level_names_the_top_level_and_works_there(tmp_path):
+    for fix in ("add", "remove"):
+        repository = gitlink_repository(tmp_path / fix, None)
+        below = repository / "dir"
+        below.mkdir()
+        guard_below = [sys.executable, str(pathlib.Path(guard.__file__))]
+        result = subprocess.run(guard_below, cwd=below, capture_output=True, text=True, env=git_environment(),
+                                check=False)
+        assert result.returncode == 1, result.stdout + result.stderr
+        advice = result.stdout.splitlines()[0]
+        assert result.stdout.splitlines() == [
+            "sub: gitlink without a .gitmodules entry; at the top level of the repository, add one with git config -f "
+            ".gitmodules submodule.dir/sub.path dir/sub, git config -f .gitmodules submodule.dir/sub.url <url> and "
+            "git add .gitmodules, or remove it with git rm --cached dir/sub",
+            "checked 1 tracked files, 1 findings"]
+        added, _, removed = advice.partition("add one with ")[2].partition(", or remove it with ")
+        commands = added.replace(" and ", ", ").split(", ") if fix == "add" else [removed]
+        for command in commands:
+            git(repository, *["https://example.com/sub.git" if word == "<url>" else word
+                              for word in command.split()[1:]])
+        result = subprocess.run(guard_below, cwd=below, capture_output=True, text=True, env=git_environment(),
+                                check=False)
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert result.stdout.splitlines() == [f"checked {1 if fix == 'add' else 0} tracked files, 0 findings"]
 
 
 def test_the_gitlinks_of_the_repository_have_their_submodule_entry():

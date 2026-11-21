@@ -224,8 +224,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   command line leave out a DAG that `DagPlan.of` refuses, and the sinks of a DAG whose redeploy the processor refused
   because another DAG writes one of its topics.
 - tools: `tools/check_tracked_config.py` fails on a gitlink that has no `.gitmodules` entry, with `<path>: gitlink
-  without a .gitmodules entry; add one with git config -f .gitmodules submodule.<path>.path <path>, git config -f
-  .gitmodules submodule.<path>.url <url> and git add .gitmodules, or remove it with git rm --cached <path>`. A
+  without a .gitmodules entry; at the top level of the repository, add one with git config -f .gitmodules
+  submodule.<path>.path <path>, git config -f .gitmodules submodule.<path>.url <url> and git add .gitmodules, or
+  remove it with git rm --cached <path>`. A
   `.gitmodules` file that git cannot read is one finding, `.gitmodules: git cannot read it (<git's message>); fix the
   file, for example resolve its conflict markers`, and the other checks still run. It reads the submodule entries from
   the `.gitmodules` file at the top level of the repository, also when it checks a directory below it. For a root
@@ -2745,6 +2746,25 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   setLofFileNameKey_1 before intervals below offset are left out`, and keeps the result of the call before. The
   refusal used to name the log `null`, for example `logLine: <folder> has no log named null; call createLogFile with
   that name first`.
+- tools: `tools/test_lg_scripts.py` ends a `run`, `create` or `pull` subcommand where a redirection starts, so `docker
+  pull>/dev/null <image>`, `docker run</dev/null -d <image>` and `docker pull&>/dev/null <image>` give the `<image>:
+  no exact version` finding again. It reads a command substitution that holds further substitutions as one word, so
+  ``X=`echo $(date)` docker pull <image>`` and `sudo -u $(basename $(pwd)) docker pull <image>` are read, and ``$(echo
+  `date`) docker pull x`` gives no finding.
+- tools: `tools/test_lg_scripts.py` ends a command only at a `&&`, `||`, `;`, `|` or `&` outside command
+  substitutions, so `X=$(cat f | head -1) docker pull <image>` is read. It reads each command inside a substitution
+  once, at any depth, so `X=$(docker pull <image> | tee log) docker pull <image>` gives one finding for each image. It
+  reads a `timeout` duration that is a variable, a positional parameter, a variable with a default value or a value
+  with a unit, as in `timeout $T`, `timeout ${T:-30}`, `timeout $1`, `timeout "${T}"` and `timeout $(cat t)s`. It
+  always reads `-k`, `-s`, `--kill-after` and `--signal` of `timeout` with their value, so a long line of `timeout`
+  options without a command word, such as `timeout -k $(cat t) -s $(cat t)` repeated, is checked in linear time. It
+  treats `>|` as a redirection, also in the `cd` check, so `cd x >| log || exit 1` passes and `echo a >|cd x` is no
+  `cd`.
+- tools: `tools/check_tracked_config.py` says where to run the commands it suggests for a gitlink without a
+  `.gitmodules` entry: `<path>: gitlink without a .gitmodules entry; at the top level of the repository, add one with
+  git config -f .gitmodules submodule.<top>.path <top>, git config -f .gitmodules submodule.<top>.url <url> and git
+  add .gitmodules, or remove it with git rm --cached <top>`. Before, the commands failed when run in a directory below
+  the top level, which the guard checks by default.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not
