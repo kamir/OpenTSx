@@ -100,6 +100,11 @@ entries before 3.0.0 are grouped by date.
 
 ### Added
 
+- TASK-020 U01 data edges: tests that a Rust fragment naming a second source topic is refused
+  (`a_fragment_reading_two_topics_is_refused`), that the bounded Rust lowering refuses `pair.xcorr`, `pair.es` and
+  `align.vector` with an exact message, and that a raw pair or vector cannot feed a federated sink. No production
+  code changes.
+
 - TASK-020 U01 membership: expected membership (`federation.expectedAssignments`) refuses one node listed for two
   sites, in Java `RunnerPlan` and Rust `site_plan.rs` (spec S2.4). `ConformanceMembershipTest` covers a
   report from another node, reports outside the plan or from the future, an unknown or extra check, repeated topic
@@ -450,6 +455,13 @@ entries before 3.0.0 are grouped by date.
   UI-to-Wayang-to-Rust orchestration and a separate
   bounded storage profile. The validators perform no network deployment or production fencing; the separate
   Rust runner and local Wayang rollout execute only their trusted-local bounded profiles.
+
+- Add the bounded `physical` deployment profile with unchanged assignment v1 texts, separate computation identity,
+  complete typed channels and scoped whole-topic ownership. Compare pinned capabilities, topic incarnations and
+  residency with host-owned facts before work, and retain located refusals through the UI. The default Rust
+  provider refuses unavailable incarnation evidence. Shared Java/Rust vectors, execution/admission regressions,
+  an explicit offline ownership upgrade, startup refusal for partial journals and generated lessons cover the contract.
+  U06 production operation and the physical ARM64 B4.2 measurement remain open.
 
 - Versioned learning workloads for all 30 executable UI/DAG operators and 25 documented library/infrastructure
   families, including MFDFA and RIS. Tests execute UI workloads and numerical library examples. Student lessons

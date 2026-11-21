@@ -52,6 +52,32 @@ output after revocation. The single-owner gateway has explicit capacity ceilings
 Existing browser examples and numerical test vectors remain unchanged. Follow the linked gateway, worker and
 backend regressions for operational behavior; passing an operator lesson does not qualify network fencing.
 
+## Trace physical deployment admission
+
+Use the [physical contract checks](../devguide/integration/wayang-shared-contracts.md#admit-a-bounded-physical-deployment)
+with the existing source, sink, checkpoint and execution-assignment lessons. Their numerical starters remain
+unchanged. The API-only bounded `physical` profile supplies a separate admission exercise:
+
+1. Compare exact `sourceDagText/specHash`, default-expanded `computationHash` and physical `planHash`.
+   Verify that the hashed computation frame starts with `opentsx.computation.v1` and rejects another format.
+   Move an assignment without changing computation, then change an effective parameter or ordered input.
+   Inspect signed-zero and adjacent binary64 cases in the shared physical-deployment vectors.
+2. Resolve two aliases to the same authoritative cluster/topic incarnation. Reject duplicate ownership within
+   one fragment while retaining complete-topic consumption by distinct replicated logical fragments.
+3. Remove an internal or external channel. Follow its original node/port location through the refusal rather
+   than treating a topic name, cursor or schema-valid document as execution authority.
+4. Change a pinned capability report, validity interval, permitted site or topic incarnation. Verify refusal
+   before preparation, publication and checkpoint advancement, including activation after preparation.
+5. Inspect the explicit offline ownership upgrade. Active or ambiguous legacy ownership blocks the upgrade;
+   completed deployment history remains intact. Remove one table from a synthetic persisted journal and verify
+   startup refuses without recreating missing history. Keep a control for a new journal. Use disposable databases.
+6. Compare an injected trusted provider's successful execution with the default Rust adapter's
+   `deployment.incarnation` refusal. The adapter has no authoritative topic UUID and does not fall back to
+   a local profile. Passing injected-provider tests does not qualify a live production provider.
+
+The [normative contract](../datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s115-admit-a-physical-deployment)
+keeps U06 production operation separate. The physical ARM64 B4.2 measurement remains open.
+
 ## Distinguish signed runner admission from operator availability
 
 The isolated signed runner accepts one complete input topic and one Episode sink
@@ -121,7 +147,11 @@ These operational exercises add admission and delivery checks:
    retained-cut, fingerprint and complete-series checks in `conform`.
 3. Follow a delivery through persisted outcome, acknowledgement and cursor
    advancement. Retry a lost acknowledgement after conformance expires and
-   distinguish that recovery from a fresh activation.
+   distinguish that recovery from a fresh activation. Deliver job A at version 10, then job B at version 1 to the
+   same site. Use
+   [`TsxPlanServiceDeliveryCursorTest`](../../opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxPlanServiceDeliveryCursorTest.java)
+   and the Rust cursor regression in [`agent.rs`](../../rust/tsx-runner/src/agent.rs) to check durable sequences 1
+   and 2 across restart, identical acknowledgement replay and changed acknowledgement refusal.
 4. Run the linked complete-W offline fixture. Keep the signal path unreachable
    during site execution, then inspect full partial records and closed-cut
    evidence through forwarding, target-acknowledgement loss, restart and

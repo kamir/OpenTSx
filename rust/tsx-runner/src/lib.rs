@@ -9,6 +9,7 @@ pub mod forwarder;
 pub mod model;
 pub mod operators;
 pub mod pairs;
+pub mod physical;
 pub mod publication;
 pub mod retrieval;
 pub mod run_loop;

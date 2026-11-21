@@ -21,7 +21,11 @@
 
 The [unified delivery plan](../devguide/integration/wayang-unified-plan.md) combines bounded storage and
 multi-node Rust orchestration. Its [shared-contract implementation](../devguide/integration/wayang-shared-contracts.md)
-validates assignment envelopes in Java and Rust; it does not deploy runners.
+validates assignment envelopes in Java and Rust. The opt-in bounded physical profile adds separate computation
+identity, complete channels and admission against host-owned capabilities, residency and topic-incarnation facts.
+Its default Rust provider refuses unavailable incarnation evidence before broker access. Injected-provider
+execution tests do not qualify a live production provider. See
+[SPEC S1.15](20-WAYANG-TS-OPERATORS-SPEC.md#s115-admit-a-physical-deployment).
 The separate [local Rust profile](../devguide/integration/rust-runner-local.md) executes pass-through,
 plausible-range checks, unit conversion and an optional trailing resample on a capped whole-topic cut.
 The separate [B2 catalog profile](../devguide/integration/rust-runner-b2.md)

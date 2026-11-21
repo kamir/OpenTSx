@@ -535,3 +535,42 @@ fn vector_checkpoint_metadata_must_still_hash_to_its_canonical_input_identity() 
         assert_eq!(admitted.pipeline.snapshot().unwrap(), saved);
     }
 }
+
+/// TASK-020 U01 data edges: every node of a fragment reads the one whole topic its assignment owns, so a fragment
+/// that names a second source topic is refused, with and without a catalog context.
+#[test]
+fn a_fragment_reading_two_topics_is_refused() {
+    let episodes = pair_input();
+    for context in [json!({}), Value::Null] {
+        let mut value = catalog_request(
+            json!([{"id":"decode","op":"decode.avro-soe"}]),
+            "decode",
+            "opentsx.episode.v2",
+            &episodes,
+            context.clone(),
+        );
+        if context.is_null() {
+            value.as_object_mut().unwrap().remove("context");
+        }
+        let mut assignment: Value =
+            serde_json::from_str(value["assignmentText"].as_str().unwrap()).unwrap();
+        let mut dag: Value =
+            serde_json::from_str(assignment["fragmentText"].as_str().unwrap()).unwrap();
+        dag["source"]["topics"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!("tsx.learning.raw.v2"));
+        for field in ["sourceDagText", "fragmentText"] {
+            assignment[field] = dag.to_string().into();
+        }
+        for field in ["specHash", "fragmentHash"] {
+            assignment[field] = tsx_contracts::sha256(&dag.to_string()).into();
+        }
+        value["assignmentText"] = assignment.to_string().into();
+        assert_eq!(
+            admit(&value.to_string(), ARTIFACT_DIGEST).err().as_deref(),
+            Some("a pipeline reads exactly one whole topic"),
+            "context {context}"
+        );
+    }
+}

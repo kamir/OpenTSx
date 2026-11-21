@@ -225,6 +225,14 @@ export const dagsAPI = {
   },
 };
 
+export interface PlanRefusal {
+  schema: 'opentsx.plan-refusal.v1';
+  code: string;
+  node: string | null;
+  field: string;
+  message: string;
+}
+
 export interface WayangDeployment {
   id: string;
   flowId: number;
@@ -233,7 +241,7 @@ export interface WayangDeployment {
   createdAtMicros: string;
   state: 'queued' | 'running' | 'completed' | 'failed' | 'idle' | 'stopping' | 'stopped' | 'waiting' | 'switching' | 'replaced';
   error: string | null;
-  profile?: 'bounded' | 'continuous';
+  profile?: 'bounded' | 'continuous' | 'physical';
   currentCycle?: string;
   completedCycles?: string;
   stopRequested?: boolean;
@@ -244,7 +252,7 @@ export interface WayangDeployment {
   switch?: { operation: string; mode: 'resume' | 'restart'; state: 'pending' | 'active' | 'failed';
     expectedEpoch: string; deployment: string; publicationEpoch: string | null; error: string | null };
   assignments: { node: string; inputTopic: string; partitionCount: string; outputTopic: string;
-    requestHash: string; specHash: string;
+    requestHash?: string; assignmentHash?: string; specHash: string;
     state?: string; receipt?: Record<string, unknown>; error?: string;
     cumulativeInputRecords?: string; cumulativeOutputRecords?: string;
     positions?: { partition: string; next: string }[] }[];
@@ -254,7 +262,8 @@ export interface WayangCapabilities {
   canRun: boolean;
   reason: string | null;
   profile?: string;
-  profiles?: ('bounded' | 'continuous')[];
+  profiles?: ('bounded' | 'continuous' | 'physical')[];
+  refusal?: PlanRefusal;
   publicationFencing?: boolean;
   switchModes?: ('resume' | 'restart')[];
   operators?: string[];
@@ -263,7 +272,7 @@ export interface WayangCapabilities {
 
 export const wayangAPI = {
   capabilities: async (): Promise<WayangCapabilities> => (await apiClient.get('/dags/wayang-rust/capabilities')).data,
-  deploy: async (flowId: number, dagText: string, profile?: 'bounded' | 'continuous'): Promise<WayangDeployment> =>
+  deploy: async (flowId: number, dagText: string, profile?: 'bounded' | 'continuous' | 'physical'): Promise<WayangDeployment> =>
     (await apiClient.post('/dags/wayang-rust/deploy', { flowId, dagText, ...(profile ? { profile } : {}) })).data,
   list: async (): Promise<WayangDeployment[]> => (await apiClient.get('/dags/wayang-rust/deployments')).data.deployments,
   get: async (id: string): Promise<WayangDeployment> => (await apiClient.get(`/dags/wayang-rust/deployments/${encodeURIComponent(id)}`)).data,

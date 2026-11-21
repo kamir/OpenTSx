@@ -503,6 +503,110 @@ state. Under D-T14 ARMv7 is built and tested under QEMU only.
 The [B3 operating guide](../devguide/integration/rust-runner-b3.md) records the
 configuration, entry points and executable evidence.
 
+### S1.15 Admit a physical deployment
+
+The opt-in `physical` profile uses
+[`opentsx.physical-deployment.v1`](schemas/opentsx.physical-deployment.v1.schema.json).
+It wraps exact execution-assignment v1 texts. It MUST NOT add fields to those assignments or replace their
+original source text, `specHash`, fragment identity, generation or complete partition positions.
+The admitted assignment runtime is `rust`, in bounded mode with the existing local cleaning subset. The Java
+driver orchestrates the Wayang stage. Catalog membership alone
+MUST NOT widen this profile. Unsupported modes or channels MUST refuse admission.
+The shared physical-envelope ceiling is 4,194,304 UTF-8 bytes. Driver and worker transport limits remain smaller.
+Original node IDs in this profile MUST match `[a-z0-9][a-z0-9-]{0,62}`; other profiles retain their existing rules.
+
+#### Keep computation and placement identities distinct
+
+The compiler MUST validate the original DAG through the existing catalog and parameter definitions before
+forming the computation identity. It MUST use the effective DAG, including defaults and fixed parameters,
+logical source and sink contracts, original node IDs and ordered inputs. Physical placement and observed
+capabilities MUST NOT enter the computation identity.
+
+`computationText` is the canonical JSON encoding of exactly `["opentsx.computation.v1", encoded]`.
+The independent computation-format identifier is inside the hashed text. Missing or unknown identifiers MUST
+refuse with `deployment.computation` at `/computationText`. The inner `encoded` value uses the tags below.
+Tags distinguish null, boolean, string, binary64, array and object values.
+Binary64 values use sixteen lowercase hexadecimal raw bits. Signed zero is preserved;
+non-finite values and integral tokens that cannot be represented exactly in binary64 MUST refuse. Arrays retain
+order. Objects sort keys by Unicode scalar order. `computationHash` is SHA-256 of the exact UTF-8 encoding.
+An offline validator checks encoding and identity; it does not replace catalog validation by the compiler.
+The tag grammar is:
+
+| Value | Encoding |
+| --- | --- |
+| Null | `["null"]` |
+| Boolean | `["boolean", value]`, with a JSON boolean value. |
+| String | `["string", value]`, with a JSON string value. |
+| Binary64 | `["f64", bits]`, with sixteen lowercase hexadecimal characters. |
+| Array | `["array", [encoded, ...]]`, preserving element order. |
+| Object | `["object", [[key, encoded], ...]]`, with distinct string keys in Unicode scalar order. |
+
+Generic validation keeps the original source text opaque, including YAML. The compiler validates that source
+and its effective DAG. Every number in a JSON fragment MUST also satisfy the finite and exact-integral rules.
+
+`planHash` identifies the complete physical envelope, excluding only its own top-level field. Canonical JSON
+sorts object keys by Unicode scalar order and preserves arrays. It emits UTF-8, escapes quote and backslash,
+and encodes every control character U+0000 through U+001F as lowercase `\u00xx`. All outer numerical metadata
+uses canonical decimal strings. Existing local v1 plan hashes retain their existing encoding.
+Placement-only changes MUST preserve `specHash` and `computationHash` and change `planHash`.
+Effective computation changes MUST change `computationHash`. Exact source bytes and the accepted provenance
+clock MUST survive retries.
+
+#### Bind complete channels and whole-topic owners
+
+Placements MUST name each embedded assignment and its ordered original fragment node IDs. Every logical node
+MUST be covered. Full typed fragment nodes, including parameters and ordered inputs, MUST match the validated
+computation. Fragment source fields other than the intentional topic cut and all sink contracts MUST match it
+as well. Fragment source topics MUST equal the assignment's complete input-topic set.
+Ownership MUST resolve each input binding to an authoritative cluster, topic incarnation and complete partition
+count. Aliases MUST resolve before checking uniqueness of `(fragment, cluster, incarnation, topic)` ownership.
+Distinct replicated logical fragments MAY each consume a complete topic. Partition cursors MUST NOT become
+separate placement units.
+
+Every fragment input, internal edge and sink MUST have exactly one channel. Channel endpoints preserve original
+node IDs, producer ports and ordered consumer input ports; `$source` and `$sink` identify external endpoints.
+Channels MUST bind payload/schema, key, partitioner, permitted sites, bounded buffering, backpressure and
+completion. Topic channels MUST bind the resolved cluster, topic incarnation and complete partition inventory.
+Fused internal edges use explicit memory transport. Missing, extra, incompatible or unsupported channels MUST
+refuse before preparation.
+The internal `opentsx.series.v1` schema label identifies the existing catalog series port; it introduces no
+serialized record format.
+
+#### Obtain facts from the host before admitting work
+
+Trusted admission facts are separate host-owned input, never request-supplied authority. They bind authoritative
+topic identities, permitted sites and the exact worker capability report, including node/site, artifact, catalog,
+state ABI, supported operations and existing resource ceilings. The envelope pins report bytes, their digest
+and validity interval. Admission MUST compare them with current host facts and enforce every validity interval.
+A DAG MUST NOT supply trusted facts, widen limits or grant placement rights.
+
+Names, partition counts and offsets are not topic-incarnation evidence. The current Rust metadata adapter cannot
+provide an authoritative topic UUID. Its physical-profile provider MUST return `deployment.incarnation` before
+broker access. It MUST NOT synthesize evidence or fall back to a local profile. Injected deterministic providers
+exercise successful preparation and activation; this does not qualify a live production provider.
+
+The driver and worker MUST retain the exact admitted physical identity and check current facts before activation.
+Changed, stale, unavailable or forbidden facts MUST refuse before preparation, provisioning, journal acceptance,
+publication or checkpoint advancement. Existing signed-site policy, conformance and durable delivery sequences
+remain their own authority boundaries; the physical envelope supplies no signature or publication fencing.
+The current physical profile MUST refuse a configured publication gateway; that combination is unsupported.
+
+The backend journal remains authoritative. Ownership keys MUST distinguish legacy scope from resolved physical
+cluster/topic incarnations. Cross-profile ambiguity MUST refuse. An explicit offline schema upgrade MUST refuse
+active or ambiguous legacy ownership and preserve deployment history. Startup MUST refuse any partial existing
+Wayang journal before table creation. A new journal MAY be created only when no Wayang journal tables exist.
+Startup MUST NOT silently migrate existing ownership. This contract authorizes no production database migration.
+
+#### Return located refusals
+
+Refusals use [`opentsx.plan-refusal.v1`](schemas/opentsx.plan-refusal.v1.schema.json): stable `code`, original
+`node` or null, `field` location and a fixed public `message`. The field uses JSON-pointer segments, with `/` for
+the document root and `/facts/...` for separate host observations. Java, Rust, backend and UI MUST retain this
+location. Private endpoints and arbitrary raw input MUST NOT enter the public diagnostic.
+Shared [physical-deployment vectors](testvectors/physical-deployment.v1.json) are mandatory Java/Rust checks.
+The [contract guide](../devguide/integration/wayang-shared-contracts.md) records reproducible checks and scope.
+U06 production operation and the physical ARM64 B4.2 measurement remain open.
+
 ## S2. Plan translation
 
 ### S2.1 Input

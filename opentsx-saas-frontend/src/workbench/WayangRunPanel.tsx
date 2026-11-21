@@ -7,6 +7,19 @@ import { buildWayangDag, splitEntries } from './wayang';
 
 function reason(error: unknown): string {
   const detail = axios.isAxiosError(error) ? error.response?.data?.detail : null;
+  if (detail !== null && typeof detail === 'object') {
+    const codes = ['json', 'fields', 'version', 'identity', 'hash', 'computation', 'assignment', 'coverage',
+      'channel', 'capability', 'freshness', 'incarnation', 'facts', 'limit'];
+    if (Object.keys(detail).sort().join(',') !== 'code,field,message,node,schema'
+      || detail.schema !== 'opentsx.plan-refusal.v1' || !codes.some((code) => detail.code === `deployment.${code}`)
+      || detail.message !== `Physical deployment refused: ${detail.code}.`
+      || !(detail.node === null || typeof detail.node === 'string' && /^[a-z0-9][a-z0-9-]{0,62}$/.test(detail.node))
+      || typeof detail.field !== 'string' || detail.field.length > 512
+      || !(detail.field === '/' || /^(\/[A-Za-z0-9_~.-]+)*$/.test(detail.field))) {
+      return 'The deployment service returned an invalid located refusal.';
+    }
+    return `${detail.message}${detail.node === null ? '' : ` Node ${detail.node}.`} Field ${detail.field || '/'}.`;
+  }
   return typeof detail === 'string' ? detail : error instanceof Error ? error.message : String(error);
 }
 
