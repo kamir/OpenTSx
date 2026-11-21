@@ -59,6 +59,7 @@ with the existing source, sink, checkpoint and execution-assignment lessons. The
 unchanged. The API-only bounded `physical` profile supplies a separate admission exercise:
 
 1. Compare exact `sourceDagText/specHash`, default-expanded `computationHash` and physical `planHash`.
+   Verify that the hashed computation frame starts with `opentsx.computation.v1` and rejects another format.
    Move an assignment without changing computation, then change an effective parameter or ordered input.
    Inspect signed-zero and adjacent binary64 cases in the shared physical-deployment vectors.
 2. Resolve two aliases to the same authoritative cluster/topic incarnation. Reject duplicate ownership within

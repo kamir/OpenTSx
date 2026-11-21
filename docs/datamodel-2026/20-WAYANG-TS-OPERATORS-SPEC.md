@@ -522,8 +522,11 @@ forming the computation identity. It MUST use the effective DAG, including defau
 logical source and sink contracts, original node IDs and ordered inputs. Physical placement and observed
 capabilities MUST NOT enter the computation identity.
 
-`computationText` encodes that DAG as tagged JSON values. Tags distinguish null, boolean, string, binary64,
-array and object values. Binary64 values use sixteen lowercase hexadecimal raw bits. Signed zero is preserved;
+`computationText` is the canonical JSON encoding of exactly `["opentsx.computation.v1", encoded]`.
+The independent computation-format identifier is inside the hashed text. Missing or unknown identifiers MUST
+refuse with `deployment.computation` at `/computationText`. The inner `encoded` value uses the tags below.
+Tags distinguish null, boolean, string, binary64, array and object values.
+Binary64 values use sixteen lowercase hexadecimal raw bits. Signed zero is preserved;
 non-finite values and integral tokens that cannot be represented exactly in binary64 MUST refuse. Arrays retain
 order. Objects sort keys by Unicode scalar order. `computationHash` is SHA-256 of the exact UTF-8 encoding.
 An offline validator checks encoding and identity; it does not replace catalog validation by the compiler.
@@ -596,7 +599,8 @@ migrate existing ownership. This contract authorizes no production database migr
 #### Return located refusals
 
 Refusals use [`opentsx.plan-refusal.v1`](schemas/opentsx.plan-refusal.v1.schema.json): stable `code`, original
-`node` or null, JSON-pointer `field` and a fixed public `message`. Java, Rust, backend and UI MUST retain this
+`node` or null, `field` location and a fixed public `message`. The field uses JSON-pointer segments, with `/` for
+the document root and `/facts/...` for separate host observations. Java, Rust, backend and UI MUST retain this
 location. Private endpoints and arbitrary raw input MUST NOT enter the public diagnostic.
 Shared [physical-deployment vectors](testvectors/physical-deployment.v1.json) are mandatory Java/Rust checks.
 The [contract guide](../devguide/integration/wayang-shared-contracts.md) records reproducible checks and scope.

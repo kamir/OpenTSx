@@ -141,9 +141,12 @@ def decode_computation(encoded):
 
     try:
         value = strict_json(encoded)
-        if canonical(value) != encoded:
+        if not isinstance(value, list) or len(value) != 2 or value[0] != "opentsx.computation.v1":
             refuse("deployment.computation", "/computationText")
-        return decode(value)
+        decoded = decode(value[1])
+        if encode_computation(decoded) != encoded:
+            refuse("deployment.computation", "/computationText")
+        return decoded
     except (ValueError, UnicodeError, TypeError, RecursionError):
         refuse("deployment.computation", "/computationText")
 
@@ -170,7 +173,7 @@ def encode_computation(value):
             return ["object", [[key, encode(item[key])] for key in sorted(item)]]
         refuse("deployment.computation", "/computationText")
 
-    return canonical(encode(value))
+    return canonical(["opentsx.computation.v1", encode(value)])
 
 
 def assignment_inventory(plan):

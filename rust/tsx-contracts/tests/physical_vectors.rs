@@ -52,12 +52,37 @@ fn shared_physical_deployment_vectors() {
 #[test]
 fn computation_refuses_unrepresentable_integer_and_nonfinite_tag() {
     assert!(physical::encode_computation(&serde_json::json!(9_007_199_254_740_993u64)).is_err());
-    assert!(physical::decode_computation("[\"f64\",\"7ff0000000000000\"]").is_err());
-    assert!(physical::decode_computation("[\"f64\",\"7ff8000000000001\"]").is_err());
-    assert!(
-        physical::decode_computation("[\"object\",[[\"x\",[\"null\"]],[\"x\",[\"null\"]]]]")
-            .is_err()
+    assert!(physical::decode_computation(
+        "[\"opentsx.computation.v1\",[\"f64\",\"7ff0000000000000\"]]"
+    )
+    .is_err());
+    assert!(physical::decode_computation(
+        "[\"opentsx.computation.v1\",[\"f64\",\"7ff8000000000001\"]]"
+    )
+    .is_err());
+    assert!(physical::decode_computation(
+        "[\"opentsx.computation.v1\",[\"object\",[[\"x\",[\"null\"]],[\"x\",[\"null\"]]]]]"
+    )
+    .is_err());
+}
+
+#[test]
+fn computation_identity_has_its_own_version_frame() {
+    let encoded = physical::encode_computation(&serde_json::json!(-0.0)).unwrap();
+    assert_eq!(
+        encoded,
+        "[\"opentsx.computation.v1\",[\"f64\",\"8000000000000000\"]]"
     );
+    for input in [
+        "[\"f64\",\"8000000000000000\"]",
+        "[\"opentsx.computation.v2\",[\"null\"]]",
+        "[\"opentsx.computation.v1\"]",
+        "[\"opentsx.computation.v1\",[\"null\"],null]",
+    ] {
+        let error = physical::decode_computation(input).unwrap_err();
+        assert_eq!(error.code, "deployment.computation");
+        assert_eq!(error.field, "/computationText");
+    }
 }
 
 #[test]

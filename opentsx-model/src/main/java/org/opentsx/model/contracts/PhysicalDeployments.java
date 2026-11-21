@@ -25,6 +25,7 @@ import java.util.Set;
 
 public final class PhysicalDeployments {
     public static final String SCHEMA = "opentsx.physical-deployment.v1";
+    public static final String COMPUTATION_SCHEMA = "opentsx.computation.v1";
     public static final int MAX_BYTES = 4_194_304;
     private static final Set<String> FIELDS = Set.of("schema", "deployment", "generation", "sourceDagText", "specHash",
             "computationText", "computationHash", "createdAtMicros", "expiresAtMicros", "assignmentTexts", "placements",
@@ -119,11 +120,15 @@ public final class PhysicalDeployments {
                 .equals(residency.get(channel.path("assignment").asText())), "facts", endpoint(channel), "/channels/residency");
     }
 
-    public static String encodeComputation(JsonNode value) { return canonical(encode(value)); }
+    public static String encodeComputation(JsonNode value) {
+        return canonical(JSON.createArrayNode().add(COMPUTATION_SCHEMA).add(encode(value)));
+    }
 
     public static JsonNode decodeComputation(String text) {
         JsonNode encoded = parse(text, "computation", "/computationText");
-        JsonNode decoded = decode(encoded);
+        require(encoded.isArray() && encoded.size() == 2 && encoded.get(0).isTextual()
+                && encoded.get(0).asText().equals(COMPUTATION_SCHEMA), "computation", null, "/computationText");
+        JsonNode decoded = decode(encoded.get(1));
         require(text.equals(encodeComputation(decoded)), "computation", null, "/computationText");
         return decoded;
     }

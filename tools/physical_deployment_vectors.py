@@ -34,6 +34,10 @@ def digest(text):
 
 
 def computation(value):
+    return ["opentsx.computation.v1", tagged(value)]
+
+
+def tagged(value):
     if value is None:
         return ["null"]
     if isinstance(value, bool):
@@ -46,9 +50,9 @@ def computation(value):
             raise ValueError("The logical number has no exact finite binary64 identity")
         return ["f64", struct.pack(">d", number).hex()]
     if isinstance(value, list):
-        return ["array", [computation(item) for item in value]]
+        return ["array", [tagged(item) for item in value]]
     if isinstance(value, dict):
-        return ["object", [[key, computation(value[key])] for key in sorted(value)]]
+        return ["object", [[key, tagged(value[key])] for key in sorted(value)]]
     raise TypeError(type(value))
 
 
@@ -170,6 +174,14 @@ sinks:
         assignment.update(sourceDagText=text, specHash=digest(text))
         plan["assignmentTexts"][0] = encoded(assignment)
 
+    def computation_frame(plan, frame):
+        value = json.loads(plan["computationText"])
+        text = canonical(value[1] if frame is None else [frame, value[1]])
+        plan.update(computationText=text, computationHash=digest(text))
+
+    case("unknown-computation-frame-version", lambda p: computation_frame(p, "opentsx.computation.v99"),
+         "computation", "/computationText")
+    case("unversioned-bare-computation", lambda p: computation_frame(p, None), "computation", "/computationText")
     case("complete-bounded-deployment")
     case("opaque-yaml-original-with-list", yaml_original)
     case("inexact-ignored-fragment-integer", lambda p: altered_fragment(p, lambda f: f.update(version=18446744073709551617)),

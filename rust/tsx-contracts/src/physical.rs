@@ -4,6 +4,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
 pub const MAX_PHYSICAL_BYTES: usize = 4_194_304;
+pub const COMPUTATION_SCHEMA: &str = "opentsx.computation.v1";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Refusal {
@@ -102,7 +103,7 @@ pub fn plan_hash(value: &Value) -> Result<String, Refusal> {
 }
 
 pub fn encode_computation(value: &Value) -> Result<String, Refusal> {
-    canonical(&tag(value)?)
+    canonical(&json!([COMPUTATION_SCHEMA, tag(value)?]))
 }
 
 fn tag(value: &Value) -> Result<Value, Refusal> {
@@ -146,7 +147,11 @@ fn tag(value: &Value) -> Result<Value, Refusal> {
 pub fn decode_computation(text: &str) -> Result<Value, Refusal> {
     let value = parse_json(text, MAX_PHYSICAL_BYTES)
         .map_err(|_| refusal("deployment.computation", "/computationText"))?;
-    let decoded = untag(&value)?;
+    let frame = value
+        .as_array()
+        .filter(|frame| frame.len() == 2 && frame[0] == COMPUTATION_SCHEMA)
+        .ok_or_else(|| refusal("deployment.computation", "/computationText"))?;
+    let decoded = untag(&frame[1])?;
     if canonical(&value)? != text {
         return Err(refusal("deployment.computation", "/computationText"));
     }

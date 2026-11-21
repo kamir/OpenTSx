@@ -13,8 +13,9 @@ The Workbench target selector retains its bounded and continuous local profiles.
 The backend verifies the unchanged legacy plan hash or the physical envelope hash before accepting a deployment.
 The physical response exposes `assignmentHash`; its opaque worker `requestHash` appears only with a verified receipt.
 Physical admission also binds exact assignment bytes, effective computation, original nodes and channels to trusted
-capability, residency and topic-incarnation observations. Retries retain the existing journal's exact plan bytes and
-revalidate the observations before execution. Located refusals use `opentsx.plan-refusal.v1` in HTTP `detail`;
+capability, residency and topic-incarnation observations. Computation identity uses the required
+`["opentsx.computation.v1", taggedValue]` frame; missing or unknown versions are refused.
+Retries retain the existing journal's exact plan bytes and revalidate the observations before execution. Located refusals use `opentsx.plan-refusal.v1` in HTTP `detail`;
 messages contain only the fixed code, original node and field location. See the
 [physical deployment contract](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s115-admit-a-physical-deployment).
 
@@ -23,7 +24,8 @@ messages contain only the fixed code, original node and field location. See the
 Stop the API and Wayang coordinator before upgrading an existing journal. Back up the database using your existing
 PostgreSQL procedure. Startup refuses the legacy or a partial ownership-table shape instead of upgrading it.
 The sole `wayang_topic_owners` table uses typed legacy rows or the physical
-`(fragment, cluster, incarnation, topic)` key for every input and sink topic channel. Legacy rows contain no trusted physical identity and conservatively
+`(fragment, cluster, incarnation, topic)` key for every input and sink topic channel.
+Legacy rows contain no trusted physical identity and conservatively
 conflict with physical claims on the same topic name.
 
 The offline upgrade requires an empty legacy ownership table, terminal deployments and cycles, retired publication

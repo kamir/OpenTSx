@@ -460,3 +460,18 @@ def test_invalid_driver_refusal_is_not_rendered_or_persisted(database, driver, m
     assert "private-worker" not in response.text
     with Session(database) as session:
         assert session.execute(select(WayangDeployment)).scalars().all() == []
+
+
+def test_computation_encoding_has_an_explicit_version_frame():
+    encoded = contract.encode_computation({"factor": -0.0})
+    frame = json.loads(encoded)
+    assert len(frame) == 2
+    assert frame[0] == "opentsx.computation.v1"
+    assert contract.encode_computation(contract.decode_computation(encoded)) == encoded
+
+
+def test_unversioned_computation_encoding_is_refused():
+    with pytest.raises(service.WayangError) as caught:
+        contract.decode_computation('["f64","8000000000000000"]')
+    assert caught.value.refusal["code"] == "deployment.computation"
+    assert caught.value.refusal["field"] == "/computationText"

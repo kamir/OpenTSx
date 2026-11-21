@@ -1600,7 +1600,8 @@
         "Resolve alias ownership within a fragment, preserve valid replicated logical fragments and reject missing or incompatible typed channels at original node and field locations.",
         "Compare separate trusted host facts with pinned capabilities, topic incarnations and permitted sites before preparation and activation.",
         "Run the offline ownership upgrade against synthetic completed history; retain history and refuse active or ambiguous legacy ownership.",
-        "Compare successful injected-provider execution with the default Rust provider deployment.incarnation refusal; do not interpret passing schema validation as live recreation fencing."
+        "Compare successful injected-provider execution with the default Rust provider deployment.incarnation refusal; do not interpret passing schema validation as live recreation fencing.",
+        "Inspect the opentsx.computation.v1 frame inside computationText; reject a missing or unknown encoding version before interpreting its inner tagged value."
       ],
       "starter": {
         "language": "java",

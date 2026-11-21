@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://opentsx.org/schemas/opentsx.physical-deployment.v1.schema.json",
   "title": "OpenTSx physical deployment v1",
-  "description": "Opt-in bounded clean-chain deployment. Assignment texts remain exact execution-assignment v1. Canonical tagged computation JSON preserves binary64 bits and array order. Host-owned admission facts are supplied separately; this document provides no publication fencing or production authorization.",
+  "description": "Opt-in bounded clean-chain deployment. Assignment texts remain exact execution-assignment v1. Separately versioned tagged computation JSON preserves binary64 bits and array order. Host-owned admission facts are supplied separately; this document provides no publication fencing or production authorization.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -43,7 +43,8 @@
       "pattern": "^[0-9a-f]{64}$"
     },
     "computationText": {
-      "type": "string"
+      "type": "string",
+      "description": "Canonical JSON frame [\"opentsx.computation.v1\", taggedValue]. The nested tag grammar preserves binary64 bits and array order. computationHash includes the version frame in its exact UTF-8 input."
     },
     "computationHash": {
       "type": "string",

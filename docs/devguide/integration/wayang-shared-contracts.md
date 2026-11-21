@@ -151,6 +151,7 @@ for the exact identity, channel, facts and refusal rules.
 
 - Compiler: validate the existing DAG and expand its existing defaults before computing a placement-independent
   identity. Preserve original IDs, ordered inputs and binary64 bits, including signed zero.
+  The hashed text includes its independent `opentsx.computation.v1` format identifier.
 - Assignment: retain exact source/fragment texts and complete whole-topic positions. Resolve binding aliases to
   authoritative cluster and topic-incarnation identities.
 - Channel: cover every fragment input, internal edge and sink, with original ports, payload/schema, key,
