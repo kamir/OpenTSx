@@ -593,6 +593,11 @@ entries before 3.0.0 are grouped by date.
 
 ### Fixed
 
+- The `statsmodels` 0.15.0 pin of `python-package` now matches `deploy/local-cp/requirements.in` and
+  `requirements.lock`. With the old 0.14.6 constraint, the install in `standalone-numerics.md` failed with
+  `ResolutionImpossible`, and `test_finite_service_http.py` expected 0.14.6. `statsmodels` 0.15.0 adds the pinned
+  dependencies `formulaic`, `interface_meta`, `narwhals`, `typing_extensions` and `wrapt`.
+
 - `docs/datamodel-2026/measurements/rust-b4-mixed-20261120/REPORT.md` has the bytes its `manifest.json` pins again;
   the repository split had replaced its links to the raw files with plain text. `tools/check_links.py` leaves files
   that a measurement manifest pins out, and `tools/test_measurement_records.py` fails when a committed file differs
