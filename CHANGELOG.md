@@ -12,6 +12,9 @@ entries before 3.0.0 are grouped by date.
 
 ### Changed
 
+- Align the local Workbench constraints and generated wheel lock with the
+  Python forecasting extra's statsmodels 0.15.0 runtime. Verify reported runtime
+  provenance against the installed package and reject diverging launcher pins.
 - Documentation, comments and example files describe the current code. Chapter 15 drops the pair windows from the
   open items, links PAIR-WINDOWS-SPEC from P8 and lists the twin variants T and L as proofs of concept. The worked
   example of chapter 16 counts twelve components and sixteen signals and names the five flows that run. The `maxAge`

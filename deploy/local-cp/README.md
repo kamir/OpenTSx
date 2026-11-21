@@ -23,6 +23,10 @@ native-wheel hashes in `requirements.lock` are generated from exact
 `requirements.in` versions; normal builds use the committed lock without
 regenerating it.
 
+The forecasting runtime pin matches the Python package's forecasting extra.
+The finite HTTP regression checks the installed version against both launcher
+inputs and the generated lock, while retaining its numerical reference checks.
+
 The connected profile opens `http://127.0.0.1:18081/workbench`. It does not start
 or reconfigure CP brokers. Finite modelling accepts explicit browser samples
 through `/analysis/v1/modelling/runs`; that route itself does not read or write
