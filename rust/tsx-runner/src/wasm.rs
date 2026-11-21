@@ -524,8 +524,13 @@ mod wasm_limits {
 
     #[test]
     fn scoped_fixture_is_cleared_after_unwinding() {
-        let panic =
-            std::panic::catch_unwind(|| with_guest(&guest("unreachable"), || panic!("fixture")));
+        // resume_unwind skips the panic hook: a hook message on stderr can split another test's
+        // "test ... ok" line in the qualification log.
+        let panic = std::panic::catch_unwind(|| {
+            with_guest(&guest("unreachable"), || {
+                std::panic::resume_unwind(Box::new("fixture"))
+            })
+        });
         assert!(panic.is_err());
         assert!(OVERRIDE.with(|current| current.borrow().is_none()));
         let mut values = [1.0];

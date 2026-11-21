@@ -9,8 +9,9 @@ Use disposable local data and retain the same worker and publication state acros
 
 Select **Legacy** in the Workbench header and open **Smart Topic**. Select **Continuous Wayang on Rust**
 under **Deployment target** and use **Run continuously with Wayang**.
-Administrator permission and flow ownership apply. The supported subset remains Avro decode, plausible-range
-checks, unit conversion and an optional trailing resample. There is no wider Rust catalog or numerical Java fallback.
+Administrator permission, or any signed-in account when the backend has `DAG_RUN_ROLE=user`, and flow ownership
+apply. The supported subset remains Avro decode, plausible-range checks, unit conversion and an optional trailing
+resample. There is no wider Rust catalog or numerical Java fallback.
 
 Each deployment retains the exact UI text, `specHash`, accepted clock, fragments, placement, binary digest and
 limits. Every finite increment covers every internal partition of each assigned topic, including empty spans.

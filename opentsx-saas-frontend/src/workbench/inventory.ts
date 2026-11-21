@@ -214,11 +214,14 @@ export interface LoadOptions {
 export const RESAMPLE_STEPS = ['', 'PT10S', 'PT1M', 'PT10M', 'PT1H'];
 export const AGGREGATIONS = ['MEAN', 'MIN', 'MAX', 'FIRST', 'LAST', 'SUM', 'COUNT'];
 
-/** Seconds of the plain durations the dialog offers (PT10S, PT1M, PT1H). */
+/** The duration grammar of docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md, section 1.2. */
+const DURATION = /^P(\d+D(T(\d+H)?(\d+M)?(\d+(\.\d+)?S)?)?|T(\d+H(\d+M)?(\d+(\.\d+)?S)?|\d+M(\d+(\.\d+)?S)?|\d+(\.\d+)?S))$/;
+
+/** Seconds of an ISO-8601 duration of that grammar (P1D, PT1H30M, PT0.5S); NaN for anything else. */
 export function durationSeconds(iso: string): number {
-  const m = /^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(iso);
-  if (!m || (!m[1] && !m[2] && !m[3])) return NaN;
-  return Number(m[1] ?? 0) * 3600 + Number(m[2] ?? 0) * 60 + Number(m[3] ?? 0);
+  if (!DURATION.test(iso)) return NaN;
+  const m = /^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?)?$/.exec(iso)!;
+  return Number(m[1] ?? 0) * 86400 + Number(m[2] ?? 0) * 3600 + Number(m[3] ?? 0) * 60 + Number(m[4] ?? 0);
 }
 
 /** Checks the window; returns the reason it cannot be used, or null. */

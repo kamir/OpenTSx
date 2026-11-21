@@ -20,6 +20,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** The state of the signals of h2-chain against an inventory: what is there, what is missing, what to do next. */
@@ -418,6 +419,25 @@ class SystemsTest {
     }
 
     @Test
+    void generatedSeriesNeedARunToken() throws Exception {
+        InMemorySeriesStore store = new InMemorySeriesStore();
+        SeriesInventory inventory = new SeriesInventory(store, SeriesInventory.Source.of("demo"), null, null, Duration.ofMinutes(1));
+        HttpClient http = HttpClient.newHttpClient();
+        List<String> topics = new java.util.ArrayList<>();
+        String gen = "{\"signal\":\"offtake.demand_kgph\",\"from\":\"2026-10-01T00:00:00Z\",\"to\":\"2026-10-01T06:00:00Z\"}";
+        for (String token : new String[] {null, " "}) {
+            try (RetrievalServer server = new RetrievalServer(new EpisodeService(store), 0, inventory, null, false, token, SYSTEMS)) {
+                IllegalStateException refused = assertThrows(IllegalStateException.class,
+                        () -> server.generatedSeries("tsx.wind.synthetic.v2", (topic, episodes) -> topics.add(topic)));
+                assertTrue(refused.getMessage().contains("OPENTSX_DAG_RUN_TOKEN"), refused.getMessage());
+                assertEquals(404, http.send(HttpRequest.newBuilder(URI.create("http://localhost:" + server.port() + "/v1/systems/h2-chain/generate"))
+                        .POST(HttpRequest.BodyPublishers.ofString(gen)).build(), HttpResponse.BodyHandlers.ofString()).statusCode());
+            }
+        }
+        assertEquals(List.of(), topics);
+    }
+
+    @Test
     void theServerHandsOutSystemsAndSignals() throws Exception {
         InMemorySeriesStore store = new InMemorySeriesStore();
         SeriesInventory inventory = new SeriesInventory(store, SeriesInventory.Source.of("demo"), null, null, Duration.ofMinutes(1));
@@ -456,5 +476,23 @@ class SystemsTest {
             String none = "http://localhost:" + without.port() + "/v1/systems";
             assertEquals(404, http.send(HttpRequest.newBuilder(URI.create(none)).build(), HttpResponse.BodyHandlers.ofString()).statusCode());
         }
+    }
+
+    @Test
+    void aGeneratedSeriesKeepsTheMetricOfItsSignal() throws Exception {
+        List<org.opentsx.model.v2.Episode> written = new java.util.ArrayList<>();
+        Systems.Writer writer = (topic, episodes) -> written.addAll(episodes);
+        String request = """
+                {"signal":"park/T02/WTUR.W","from":"2026-10-01T00:00:00Z","to":"2026-10-01T00:01:00Z",
+                 "bindings":[{"signal":"park/T02/WTUR.W","grade":"raw","source":{"kind":"generator","processor":"gen.sine","seed":1,
+                   "params":{"mean":1500,"amplitude":500,"period":"PT1H"}%s}}]}""";
+        assertEquals(60, SYSTEMS.generate("h2-chain", body(request.formatted("")), "tsx.wind.synthetic.v2", writer).path("samples").asInt());
+        assertEquals("h2-chain.park_T02_WTUR.W", written.get(0).getSeries().getMetric().toString());
+        assertEquals("kW", written.get(0).getSeries().getUnit().toString());
+        // a demo series cannot take the metric of the measured channel through select
+        IllegalArgumentException refused = org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> SYSTEMS.generate("h2-chain",
+                body(request.formatted(",\"select\":{\"metric\":\"wind.turbine.power_active\"}")), "tsx.wind.synthetic.v2", writer));
+        assertTrue(refused.getMessage().contains("park/T02/WTUR.W@raw: a generator source has no select"), refused.getMessage());
+        assertEquals(1, written.size());
     }
 }

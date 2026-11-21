@@ -28,9 +28,12 @@ appear explicitly; they do not replace working data.
 
 Choose **Legacy** for the classic operation panels, sample CSV/chart export
 and original properties/code views. `/workbench?mode=legacy` opens that
-presentation directly, overriding the saved display choice. The modern modes
-use the same operators and retained workflow. **Smart Topics** opens the
-existing deployment controls separately from finite analysis.
+presentation directly, overriding the saved display choice. An operation
+button checks its parameters as the inspector does and adds no step for a
+refused value: **Resample** with an empty `every` shows
+`every requires a finite number.`. The modern modes use the same operators and
+retained workflow. **Smart Topics** opens the existing deployment controls
+separately from finite analysis.
 
 In modern modes, search **Find an operator**, choose an operator, configure its
 inspector and select **Add operator**. Existing nodes use **Apply parameters**

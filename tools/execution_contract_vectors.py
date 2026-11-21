@@ -167,6 +167,32 @@ def vectors():
             "assignment.coverage")
     changed("duplicate-input-ownership", lambda v: v["inputs"].append(copy.deepcopy(v["inputs"][0])),
             "assignment.ownership")
+    # D-T21: optional whole-topic outputs, one writer per topic
+    def outputs(value, *entries):
+        value["outputs"] = [dict(binding="local", topic=topic, partitionCount="2", port="out", kind=kind)
+                            for topic, kind in entries]
+        return value["outputs"]
+    changed("outputs-sink-and-repartition", lambda v: outputs(
+        v, ("tsx.wind.clean.v2", "sink"), ("tsx.wind.repartition.convert.vector.v2", "repartition")))
+    changed("outputs-empty", lambda v: v.update(outputs=[]), "assignment.output")
+    changed("outputs-not-array", lambda v: v.update(outputs={}), "assignment.output")
+    changed("output-extra-field", lambda v: outputs(v, ("tsx.wind.clean.v2", "sink"))[0].update(offset="0"),
+            "assignment.output")
+    changed("output-missing-port", lambda v: outputs(v, ("tsx.wind.clean.v2", "sink"))[0].pop("port"),
+            "assignment.output")
+    changed("output-unknown-kind", lambda v: outputs(v, ("tsx.wind.clean.v2", "broadcast")), "assignment.output")
+    changed("output-invalid-port", lambda v: outputs(v, ("tsx.wind.clean.v2", "sink"))[0].update(port="Out"),
+            "assignment.output")
+    changed("output-invalid-topic", lambda v: outputs(v, ("tsx.wind.Clean.v2", "sink")), "assignment.output")
+    changed("output-zero-partitions", lambda v: outputs(v, ("tsx.wind.clean.v2", "sink"))[0].update(
+        partitionCount="0"), "assignment.output")
+    changed("output-numeric-partitions", lambda v: outputs(v, ("tsx.wind.clean.v2", "sink"))[0].update(
+        partitionCount=2), "assignment.output")
+    changed("output-written-twice", lambda v: outputs(v, ("tsx.wind.clean.v2", "sink"), ("tsx.wind.clean.v2", "sink")),
+            "assignment.output")
+    changed("output-is-own-input", lambda v: outputs(v, (v["inputs"][0]["topic"], "sink")).__setitem__(
+        0, dict(binding=v["inputs"][0]["binding"], topic=v["inputs"][0]["topic"], partitionCount="2", port="out",
+                kind="sink")), "assignment.output")
     cases.append({"name": "duplicate-outer-key", "kind": "assignment",
                   "input": encoded(assignment())[:-1] + ',"node":"rust-b"}', "error": "assignment.json"})
     cases.append({"name": "escaped-duplicate-key", "kind": "assignment",
@@ -229,6 +255,17 @@ def vectors():
     two.update(assignment="convert-topic-b", node="rust-b", fragmentText=pretty, fragmentHash=digest(pretty))
     two["inputs"][0]["topic"] = "tsx.wind.other-episodes.v2"
     group("inconsistent-fragment-definition", [one, two], "assignment.context")
+    upstream = copy.deepcopy(one)
+    upstream["outputs"] = [dict(binding="local", topic="tsx.wind.repartition.convert.vector.v2", partitionCount="2",
+                                port="out", kind="repartition")]
+    downstream = copy.deepcopy(one)
+    downstream.update(assignment="vector-topic", node="rust-b", fragment="vector")
+    downstream["inputs"][0]["topic"] = "tsx.wind.repartition.convert.vector.v2"
+    group("repartition-topic-written-once-read-whole", [upstream, downstream])
+    rival = copy.deepcopy(downstream)
+    rival["inputs"][0]["topic"] = "tsx.wind.other-episodes.v2"
+    rival["outputs"] = copy.deepcopy(upstream["outputs"])
+    group("repartition-topic-with-two-writers", [upstream, rival], "assignment.ownership")
     for name, text in [("empty-utf8", ""), ("ascii", "OpenTSx"), ("unicode", "µW Ω 😀"),
                        ("line-feed", "a\nb\n"), ("carriage-return-line-feed", "a\r\nb\r\n"),
                        ("decimal-text-above-js-limit", "9007199254740993")]:

@@ -136,4 +136,57 @@ class DecisionsTest {
         assertEquals(13000.0, range.path("observedMax").asDouble());
         assertTrue(String.join(" | ", texts(follow.path("reasons"))).contains("outside the range the analysis was checked in"));
     }
+
+    /**
+     * h2-dispatch with a rule that was checked on measured data and states an uncertainty limit, a demand only the
+     * price analysis needs, and a share of questionable values on the available power and on the optional generated
+     * power.
+     */
+    static JsonNode withLimits(ObjectNode inv) {
+        SystemDoc d = SystemDoc.load(SystemDocTest.H2, SystemDocTest.ROOT);
+        ObjectNode card = d.decisions().get("h2-dispatch").deepCopy();
+        ((ObjectNode) byId(card.path("needs"), "signal", "park.p_potential_kw")).put("maxQuestionable", 0.05);
+        ((ObjectNode) byId(card.path("needs"), "signal", "park.p_gen_kw")).put("maxQuestionable", 0.05);
+        ((ObjectNode) byId(card.path("needs"), "signal", "offtake.demand_kgph")).putArray("for").add("price-following");
+        ObjectNode hold = (ObjectNode) byId(card.path("analyses"), "id", "hold");
+        hold.putArray("evidence").addObject().put("what", "Compared with the setpoints of the operator").put("result", "same setpoint");
+        hold.putObject("uncertainty").put("method", "interval").put("blockAbove", 20).put("unit", "kg");
+        d.decisions().put("h2-dispatch", card);
+        return Decisions.status(d, SYSTEMS.signals("h2-chain", inv)).path("decisions").get(0);
+    }
+
+    @Test
+    void aLimitTheServerDoesNotEvaluateRestricts() {
+        ObjectNode inv = windFarm();
+        clean(inv, "p1", "park.p_potential_kw", "h2-chain.park.p_potential_kw", 0, 9000, "ESTIMATED", null);
+        clean(inv, "p2", "offtake.demand_kgph", "h2-chain.offtake.demand_kgph", 20, 80, "REPORTED", null);
+        JsonNode d = withLimits(inv);
+        // the checks that ran find the input fit; the share of questionable values was not checked
+        assertTrue(byId(d.path("needs"), "signal", "park.p_potential_kw").path("ok").asBoolean());
+        JsonNode hold = byId(d.path("analyses"), "id", "hold");
+        assertEquals("restricted", hold.path("status").asText());
+        assertEquals(List.of("park.p_potential_kw: the share of questionable values is not evaluated by this server",
+                "the width of the uncertainty is not evaluated by this server"), texts(hold.path("reasons")));
+    }
+
+    @Test
+    void anUnevaluatedLimitOfANeedComesBeforeAGeneratedInput() {
+        ObjectNode inv = windFarm();
+        clean(inv, "p1", "park.p_potential_kw", "h2-chain.park.p_potential_kw", 0, 9000, "ESTIMATED", "SYNTHETIC");
+        JsonNode hold = byId(withLimits(inv).path("analyses"), "id", "hold");
+        assertEquals("restricted", hold.path("status").asText());
+        assertEquals(List.of("park.p_potential_kw: the share of questionable values is not evaluated by this server",
+                "an input is generated or made of generated data: the result shows the mechanism, not an effect",
+                "the width of the uncertainty is not evaluated by this server"), texts(hold.path("reasons")));
+    }
+
+    @Test
+    void theUncertaintyLimitOfTheExampleIsNotEvaluated() {
+        JsonNode d = dispatch(windFarm());
+        JsonNode follow = byId(d.path("analyses"), "id", "price-following");
+        assertEquals("blocked", follow.path("status").asText());
+        List<String> why = texts(follow.path("reasons"));
+        assertEquals("the width of the uncertainty is not evaluated by this server", why.get(why.size() - 1));
+        assertFalse(String.join(" ", texts(byId(d.path("analyses"), "id", "hold").path("reasons"))).contains("uncertainty"));
+    }
 }

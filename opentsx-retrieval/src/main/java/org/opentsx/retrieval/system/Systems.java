@@ -127,9 +127,6 @@ public final class Systems {
         if (s.raw() == null || !"generator".equals(s.raw().kind())) {
             throw new IllegalArgumentException(id + " is not bound to a generator");
         }
-        if (s.expect().interval() == null) {
-            throw new IllegalArgumentException(id + " needs a sampling interval to be generated (expect.interval)");
-        }
         long from;
         long to;
         try {
@@ -138,7 +135,7 @@ public final class Systems {
         } catch (java.time.format.DateTimeParseException e) {
             throw new IllegalArgumentException("from and to must be instants like 2026-10-01T00:00:00Z");
         }
-        long interval = java.time.Duration.parse(s.expect().interval()).toNanos() / 1000;
+        long interval = Generators.intervalMicros(s.expect().interval());
         Generators.Target target = new Generators.Target(d.system(), s.id(), metric(d, s), s.expect().unit(), s.raw().processor(),
                 s.raw().seed() == null ? 0 : s.raw().seed(), s.expect().min(), s.expect().max(), d.hash());
         List<Episode> episodes = Generators.episodes(target, s.raw().params() == null ? JSON.objectNode() : s.raw().params(),
@@ -161,11 +158,8 @@ public final class Systems {
         return v.isArray() && !v.isEmpty() ? v.get(v.size() - 1).asText("") : "";
     }
 
-    /** Metric of a generated series: the raw source's {@code select.metric}, else {@code <system>.<signal id>}. */
+    /** Metric of a generated series: {@code <system>.<signal id>}; a generator source has no select. */
     private static String metric(SystemDoc d, Signal s) {
-        if (s.raw() != null && s.raw().metric() != null) {
-            return s.raw().metric();
-        }
         return (d.system() + "." + s.id()).replaceAll("[^A-Za-z0-9._-]", "_");
     }
 

@@ -4,7 +4,8 @@ FastAPI backend with JWT authentication, async SQLAlchemy, and PostgreSQL.
 
 ## Admit physical deployments
 
-You need the configured PostgreSQL journal, the existing administrator role and an authenticated Wayang driver.
+You need the configured PostgreSQL journal, an account the run role admits (`DAG_RUN_ROLE`: administrators, or
+every account with `user`) and an authenticated Wayang driver.
 The opt-in `physical` profile uses the existing `/api/v1/dags/wayang-rust/deploy` request with `flowId`, `dagText`
 and `profile: "physical"`. The default host provider returns `deployment.incarnation` because authoritative
 incarnation facts are unavailable. This API path does not establish production qualification or publication fencing.
@@ -192,6 +193,23 @@ Settings: `RETRIEVAL_URL` (the retrieval server; unset means no deployments), `D
 (`superuser`, the default: administrators only; `user`: every account). Sign-up is open, so `user` lets everyone
 who can register deploy and stop.
 
+`DAG_RUN_ROLE` is the one setting for every run the backend forwards. It also decides who may run the demo
+generators (`POST /api/v1/systems/<system>/generate`) and Wayang deployments (`/api/v1/dags/wayang-rust`): with
+`user`, every account may do all three. The backend then prints at startup:
+
+```text
+DAG_RUN_ROLE=user: every signed-in account may deploy and stop DAGs, run demo generators and run Wayang deployments. Sign-up is open.
+```
+
+### System working copies
+
+`PUT /api/v1/systems/<system>/bindings` stores the source of one grade of one signal in the working copy of the
+signed-in user. A binding that cannot be a source answers 422 with the reason. A generator source names `gen.ou` or
+`gen.sine` and has no `select`. `params` is optional and, when given, an object. `seed` is optional and, when given, a
+whole number. The backend does not check the parameters of a generator; the retrieval server reports a broken rule as
+a problem of the system document. The routes and rules are in
+[SYSTEM-DOCUMENT-SPEC.md, section 7](../docs/datamodel-2026/SYSTEM-DOCUMENT-SPEC.md#s7-working-copy).
+
 See full API documentation at: `/docs` (Swagger UI)
 
 ## Database Setup
@@ -230,7 +248,8 @@ python -m pytest tests
 ```
 
 `tests/test_dags.py` covers the DAG routes without a database or a network: the user comes from a dependency
-override, the retrieval server from an httpx mock transport. Accounts and stored flows are checked against a running
+override, the retrieval server from an httpx mock transport. `tests/test_systems.py` covers the working copies and
+the generate route the same way. Accounts and stored flows are checked against a running
 instance with `smoke-flows.sh`.
 
 ## Production Deployment

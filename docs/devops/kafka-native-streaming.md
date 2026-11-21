@@ -7,7 +7,7 @@ Use the OpenTSx 3.1.0 Kafka-client path to maintain derived topics on KafScale. 
 You need a reachable broker, the OpenTSx Java modules and one processor for each domain. Keep processor checkpoint files on persistent storage. The Kafka bootstrap and advertised broker addresses must be reachable from every client.
 
 The workbench exports a DAG. The SaaS backend forwards an authorized deployment to the retrieval server, which validates it and writes its desired state to the control topic. The processor reads that topic, follows source episodes, writes derived records and publishes status. The retrieval server offers vector components as series in the inventory. See the
-[deployment and feed implementation](../../opentsx-retrieval/src/main/java/org/opentsx/retrieval/server/KafScaleFeed.java#L246).
+[deployment and feed implementation](../../opentsx-retrieval/src/main/java/org/opentsx/retrieval/server/KafScaleFeed.java#L248).
 
 This integration uses Kafka clients. It does not use a native S3 segment reader. It uses manual partition assignment, explicit offsets and local checkpoints. It does not require timestamp seek, log compaction, transactional writes or idempotent producers. The
 [client settings](../../opentsx-kafka-v2/src/main/java/org/opentsx/kafka/KafScaleClients.java#L14) define this boundary.
@@ -22,7 +22,7 @@ This integration uses Kafka clients. It does not use a native S3 segment reader.
 | `tsx.<domain>.dags.v1` | Deployment and stop records |
 | `tsx.<domain>.dag-status.v1` | Processor state and progress |
 
-Use the [retrieval module instructions](../../opentsx-retrieval/README.md#vector-processor) for the processor launcher and [the SaaS guide](../user-manual/14-saas-service-layer.md) for the account-based front end. The existing processor entry point is `bin/opentsx vectors`; its deployment and stop commands write control records. The retrieval write routes require `--dag-runs true` and use the configured `OPENTSX_DAG_RUN_TOKEN`. An installation without a configured token permits writes from callers that can reach it. The supported boundary is a trusted installation, not a shared tenant-isolation service.
+Use the [retrieval module instructions](../../opentsx-retrieval/README.md#vector-processor) for the processor launcher and [the SaaS guide](../user-manual/14-saas-service-layer.md) for the account-based front end. The existing processor entry point is `bin/opentsx vectors`; its deployment and stop commands write control records. The retrieval write routes require `--dag-runs true` and the run token of the server (`--dag-run-token` or `OPENTSX_DAG_RUN_TOKEN`) in the header `X-OpenTSx-Run-Token`. With `--dag-runs true` and no token, or a blank one, the server does not start. The SaaS backend sends the token for every account that `DAG_RUN_ROLE` admits. The supported boundary is a trusted installation, not a shared tenant-isolation service.
 
 ## Publish an executable graph
 

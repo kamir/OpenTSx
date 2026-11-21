@@ -1,6 +1,6 @@
 package org.opentsx.twin;
 
-/** Receives port messages and barriers in order (in-memory log, later a KafScale topic). */
+/** Receives port messages and barriers in order ({@link MessageLog} keeps them in memory; no topic carries them). */
 public interface MessageSink {
 
     void message(PortMessage m);

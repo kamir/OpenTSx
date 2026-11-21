@@ -16,18 +16,18 @@ import java.util.Map;
 /** The single-family house in the Erzgebirge (P9.7) for the Studio: one synthetic year, levers as alternatives. */
 public final class HouseStudioScenario implements StudioScenario {
 
-    /** German names of the levers (ids from {@code HouseScenario.levers}). */
+    /** Display names of the levers (ids from {@code HouseScenario.levers}). */
     private static final Map<String, String> LEVERS = Map.of(
-            "minus-1K", "Raumtemperatur 1 °C niedriger (21 → 20 °C)",
-            "night-setback-5K", "Tiefere Nachtabsenkung (3 → 5 K, 22 bis 6 Uhr)",
-            "unused-rooms-17C", "Selten genutzte Räume 4 K kühler (20 % der Fläche)",
-            "more-wood", "Mehr Holz: Ofen 7 statt 4 Stunden je Abend",
-            "dhw-50C", "Warmwasserspeicher 50 statt 60 °C",
-            "he-pump", "Hocheffizienzpumpe (8 statt 65 W)",
-            "new-freezer", "Neue Gefriertruhe (60 % weniger Strom)",
-            "standby-off", "Standby abschalten (Steckerleisten)",
-            "less-tv", "30 % weniger Fernsehzeit",
-            "combined", "Alle Hebel außer „mehr Holz“");
+            "minus-1K", "Room temperature 1 °C lower (21 → 20 °C)",
+            "night-setback-5K", "Deeper night setback (3 → 5 K, 22:00 to 6:00)",
+            "unused-rooms-17C", "Rarely used rooms 4 K cooler (20 % of the area)",
+            "more-wood", "More wood: stove 7 instead of 4 hours per evening",
+            "dhw-50C", "Hot water cylinder at 50 instead of 60 °C",
+            "he-pump", "High-efficiency pump (8 instead of 65 W)",
+            "new-freezer", "New freezer (60 % less electricity)",
+            "standby-off", "Standby off (power strips)",
+            "less-tv", "30 % less TV time",
+            "combined", "All levers except \"more wood\"");
 
     private final TwinPlan plan = HouseDemo.plan();
 
@@ -38,13 +38,13 @@ public final class HouseStudioScenario implements StudioScenario {
 
     @Override
     public String title() {
-        return "Einfamilienhaus im Erzgebirge (Öl-Holz-Heizung)";
+        return "Single-family house in the Erzgebirge (oil and wood heating)";
     }
 
     @Override
     public String description() {
-        return "Zwei Bewohner, Ölkessel und Kaminofen, kein PV, keine Wärmepumpe. Ein Jahr in Stundenschritten auf "
-                + "synthetischem Klima; alle Zahlen sind Annahmen, bis die Abrechnungen eingespielt sind. Hebel sind modelliert.";
+        return "Two residents, oil boiler and wood stove, no PV, no heat pump. One year in hourly steps on a synthetic "
+                + "climate; all numbers are assumptions until the bills are loaded. Levers are modelled.";
     }
 
     @Override
@@ -91,30 +91,30 @@ public final class HouseStudioScenario implements StudioScenario {
     @Override
     public List<Kpi> kpis() {
         return List.of(
-                new Kpi("kpi.oil_l", "Heizöl", "l", 0, -1),
-                new Kpi("kpi.wood_ster", "Holz", "Ster", 1, 0),
-                new Kpi("kpi.electricity_kwh", "Strom", "kWh", 0, -1),
-                new Kpi("kpi.final_heat_kwh", "Endenergie Wärme", "kWh", 0, -1),
-                new Kpi("kpi.final_heat_kwh_m2", "Endenergie je m²", "kWh/m²a", 0, -1),
-                new Kpi("kpi.boiler_loss_kwh", "Kesselverluste", "kWh", 0, -1),
-                new Kpi("kpi.mean_indoor_c", "mittlere Raumtemperatur", "°C", 1, 0),
-                new Kpi("kpi.under_h", "Stunden unter Komfortgrenze", "h", 0, -1),
-                new Kpi("kpi.cost_eur", "Energiekosten im Jahr", "€", 0, -1),
-                new Kpi("kpi.co2_kg", "CO₂ im Jahr", "kg", 0, -1));
+                new Kpi("kpi.oil_l", "Heating oil", "l", 0, -1),
+                new Kpi("kpi.wood_ster", "Wood", "Ster", 1, 0),
+                new Kpi("kpi.electricity_kwh", "Electricity", "kWh", 0, -1),
+                new Kpi("kpi.final_heat_kwh", "Final energy for heat", "kWh", 0, -1),
+                new Kpi("kpi.final_heat_kwh_m2", "Final energy per m²", "kWh/m²a", 0, -1),
+                new Kpi("kpi.boiler_loss_kwh", "Boiler losses", "kWh", 0, -1),
+                new Kpi("kpi.mean_indoor_c", "Mean room temperature", "°C", 1, 0),
+                new Kpi("kpi.under_h", "Hours below the comfort limit", "h", 0, -1),
+                new Kpi("kpi.cost_eur", "Energy cost per year", "€", 0, -1),
+                new Kpi("kpi.co2_kg", "CO₂ per year", "kg", 0, -1));
     }
 
     @Override
     public Map<String, String> labels() {
         Map<String, String> m = new LinkedHashMap<>();
-        m.put("building.t_in_c", "Raumtemperatur");
-        m.put("weather.t_out_c", "Außentemperatur");
-        m.put("building.q_req_kw", "Wärmebedarf Gebäude");
-        m.put("boiler.q_space_kw", "Heizleistung Ölkessel");
-        m.put("boiler.fuel_lph", "Ölverbrauch");
-        m.put("tank.level_l", "Füllstand Öltank");
-        m.put("stove.q_heat_kw", "Heizleistung Kaminofen");
-        m.put("woodstore.stock_ster", "Holzvorrat");
-        m.put("meter.p_import_kw", "Strombezug");
+        m.put("building.t_in_c", "Room temperature");
+        m.put("weather.t_out_c", "Outdoor temperature");
+        m.put("building.q_req_kw", "Heat demand of the building");
+        m.put("boiler.q_space_kw", "Heat output of the oil boiler");
+        m.put("boiler.fuel_lph", "Oil consumption");
+        m.put("tank.level_l", "Oil tank level");
+        m.put("stove.q_heat_kw", "Heat output of the wood stove");
+        m.put("woodstore.stock_ster", "Wood stock");
+        m.put("meter.p_import_kw", "Electricity drawn");
         return m;
     }
 
@@ -125,12 +125,12 @@ public final class HouseStudioScenario implements StudioScenario {
 
     @Override
     public String decision() {
-        return "Welcher Hebel lohnt sich, und zu welchem Verlust an Komfort?";
+        return "Which lever pays off, and at what loss of comfort?";
     }
 
     @Override
     public Map<String, List<Limit>> limits() {
-        return Map.of("tank.level_l", List.of(new Limit("Bestellschwelle",
+        return Map.of("tank.level_l", List.of(new Limit("Reorder threshold",
                 HouseScenario.param(plan, "tank", "reorderL", 600))));
     }
 

@@ -26,7 +26,7 @@ writes it. The vector processor, the retrieval server and the command `opentsx v
 series sink (a sink with `schema: opentsx.episode.v2`) is an `opentsx.dag.v2` document. This page does not specify
 series sinks.
 
-Implemented in: `workbench/flow.ts:698-755` (write), `vector/DagPlan.java:17-132` and `vector/VectorJob.java:53-134`
+Implemented in: `workbench/flow.ts:706-763` (write), `vector/DagPlan.java:17-132` and `vector/VectorJob.java:53-138`
 (read), `vector/SeriesJob.java:56-140` (series sinks).
 
 ### 1.1 Fields
@@ -55,7 +55,7 @@ published `stats.window` node, and `schema: opentsx.episode.v2` without a `signa
 series sink without a signal gets `a series sink names the signal it writes: signal: { system, id, grade }`.
 
 Implemented in: `vector/VectorProcessor.java:220-230`, `vector/VectorJob.java:57-63,109-112`,
-`vector/DagPlan.java:25-29,43-48,79-111`, `vector/SeriesJob.java:73-82`, `workbench/flow.ts:711-733,753-754`.
+`vector/DagPlan.java:25-29,43-48,79-111`, `vector/SeriesJob.java:73-82`, `workbench/flow.ts:717-739,759-760`.
 
 ### 1.2 Checks before a deployment
 
@@ -85,7 +85,7 @@ do not check that the record types of connected nodes match.
 The retrieval server answers a refused document with HTTP 400 and `{"error": "<message>"}`.
 
 Implemented in: `vector/DagPlan.java:17-132`, `vector/VectorProcessor.java:220-230,280-293`,
-`server/KafScaleFeed.java:246-249`, `server/RetrievalServer.java:219-220,261-274`,
+`server/KafScaleFeed.java:248-251`, `server/RetrievalServer.java:223-224,262-275`,
 `vector/VectorProcessorApp.java:54-58`.
 
 ### 1.3 Document hash
@@ -138,7 +138,7 @@ with one value per component. The processor writes the points as `opentsx.vector
 The web workbench and Java implement the operator. Both pass the shared test vectors in
 [testvectors/align-vector.v1.json](testvectors/align-vector.v1.json).
 
-Implemented in: `workbench/vector.ts:126-245`, `vector/VectorAligner.java:100-219`, `vector/VectorStream.java:149-348`.
+Implemented in: `workbench/vector.ts:138-259`, `vector/VectorAligner.java:100-223`, `vector/VectorStream.java:153-352`.
 
 ### 2.1 Parameters
 
@@ -171,9 +171,9 @@ two typed names with the same snake-case name are refused. A typed name without 
 empty. It derives a name left empty from the bucket name and appends `_2`, `_3` and so on when another input has
 that name.
 
-Implemented in: `vector/VectorJob.java:83-104,119-134`, `vector/VectorAligner.java:21,29-38,105`,
-`vector/VectorStream.java:110-111`, `workbench/flow.ts:505-512,690-692`, `workbench/vector.ts:320-325`,
-`rust/tsx-runner/src/pairs.rs:182-185`, `opentsx-wayang/src/main/java/org/opentsx/wayang/DagToWayang.java:235-244`.
+Implemented in: `vector/VectorJob.java:83-108,123-138`, `vector/VectorAligner.java:21,29-38,109`,
+`vector/VectorStream.java:114-115`, `workbench/flow.ts:505-512,694-696`, `workbench/vector.ts:341-346`,
+`rust/tsx-runner/src/pairs.rs:182-185`, `opentsx-wayang/src/main/java/org/opentsx/wayang/DagToWayang.java:236-245`.
 
 ### 2.2 Clock, components and key
 
@@ -188,8 +188,8 @@ Implemented in: `vector/VectorJob.java:83-104,119-134`, `vector/VectorAligner.ja
 | Time axis | Every input MUST have a time axis. The workbench refuses spectra, histograms and other axes with `<bucket> has a <kind> axis. A vector needs inputs with a time axis.` |
 | One series per component | The key MUST tell apart the series that give the same component. The processor, `VectorAligner`, the workbench preview and the Rust runner `tsx-runner` refuse data in which two series give the same component of one vector: `the series <a> and <b> both give the component "<c>" of one vector; choose a key that tells them apart`. `<a>` and `<b>` are the ids of the two series, `<a>` the first in id order. |
 
-Implemented in: `vector/VectorAligner.java:89-98,104-204,206-219`, `workbench/vector.ts:57-94,126-185`,
-`vector/VectorStream.java:240-282`, `rust/tsx-runner/src/pairs.rs:461-519`, `workbench/vector.test.ts:187-196`,
+Implemented in: `vector/VectorAligner.java:89-98,108-208,210-223`, `workbench/vector.ts:57-94,138-199`,
+`vector/VectorStream.java:244-286`, `rust/tsx-runner/src/pairs.rs:461-519`, `workbench/vector.test.ts:191-200`,
 `rust/tsx-runner/tests/pair_vector_vectors.rs:461-482`.
 
 ### 2.3 Record
@@ -223,7 +223,7 @@ A vector topic holds one `opentsx.vector.v1` JSON record per measuring point. JS
   the measuring points in the order they were written.
 * The processor does not check component names against the pattern. `params.names` of a document MUST follow it.
 
-Implemented in: `vector/VectorJson.java:28-66`, `workbench/vector.ts:281-325`,
+Implemented in: `vector/VectorJson.java:28-66`, `workbench/vector.ts:295-339`,
 `kafka/TopicLayout.java:27,107-116,183-200`, `vector/VectorProcessor.java:385-391`,
 `vector/VectorProcessorApp.java:85-89`, `vector-tests/VectorJobTest.java:157-165`.
 
@@ -240,7 +240,7 @@ series.
 | Layout | The record with the latest tick of a key sets clock and components. Records of that key with another clock, other components or a tick start off that grid are left out. |
 | Invalid records | A record is ignored when it does not parse, has another `schema`, has `values` and `components` of different or zero length, or has a `window.to` that is not after `window.from`. |
 
-Implemented in: `server/KafScaleFeed.java:198-238`, `vector/VectorStoreBridge.java:26-60`,
+Implemented in: `server/KafScaleFeed.java:200-240`, `vector/VectorStoreBridge.java:26-60`,
 `vector/VectorJson.java:76-102`.
 
 ### 2.5 What the processor runs
@@ -258,9 +258,9 @@ addition to [1.2](#12-checks-before-a-deployment):
 | Derived episodes | Episodes cut out of other episodes, with a parent episode id or a source episode id, are ignored. | none |
 
 Implemented in: `vector/VectorJob.java:53-121`, `vector/VectorProcessor.java:378-391,602-606`,
-`workbench/flow.ts:683-686,718`, `vector/VectorAligner.java:103-106,219-228`, `vector/VectorStream.java:106-109`,
-`workbench/vector.ts:99-129,150-151`, `opentsx-wayang/src/main/java/org/opentsx/wayang/DagToWayangBuild.java:61-78`,
-`opentsx-wayang/src/main/java/org/opentsx/wayang/DagToWayang.java:74`, `rust/tsx-runner/src/pairs.rs:333-340,1786-1791`,
+`workbench/flow.ts:686-690,724`, `vector/VectorAligner.java:104-107,225-234`, `vector/VectorStream.java:106-109`,
+`workbench/vector.ts:100-130,151-152`, `opentsx-wayang/src/main/java/org/opentsx/wayang/DagToWayangBuild.java:61-78`,
+`opentsx-wayang/src/main/java/org/opentsx/wayang/DagToWayang.java:74`, `rust/tsx-runner/src/pairs.rs:333-340,1789-1794`,
 `rust/tsx-runner/src/catalog.rs:519-541,1206-1210`.
 
 ## 3. Vector processor
@@ -288,7 +288,7 @@ topics have one partition. The retrieval server and `opentsx vectors` create the
 the number of records the runner has sent.
 
 Implemented in: `kafka/TopicLayout.java:130-160`, `vector/VectorProcessor.java:67-81,137-150,203-256,296-301,763-788`,
-`vector/VectorStream.java:222-233`, `server/KafScaleFeed.java:270-275`, `vector/VectorProcessorApp.java:48-50`.
+`vector/VectorStream.java:222-233`, `server/KafScaleFeed.java:272-277`, `vector/VectorProcessorApp.java:48-50`.
 
 ### 3.2 Runners
 
@@ -321,7 +321,7 @@ Deploying and stopping write a record to the control topic. There are three ways
 | Way | Who | How |
 |---|---|---|
 | Workbench, tab "Smart Topic", buttons Deploy and Stop | Signed-in administrators. Every signed-in user when the SaaS backend has `DAG_RUN_ROLE=user`. | The SaaS backend checks the account at `POST /api/v1/dags/deploy` (body: the document as YAML) and `POST /api/v1/dags/stop?name=<dag>`. It forwards to the retrieval server with the run token of the installation and the e-mail address of the account in `X-OpenTSx-By`. |
-| Retrieval server: `POST /v1/dags/deploy` (body: the document as YAML, at most 262144 bytes) and `POST /v1/dags/stop?name=<dag>` | Callers with the run token in the header `X-OpenTSx-Run-Token` when the server has a token (`--dag-run-token` or `OPENTSX_DAG_RUN_TOKEN`). Anyone who reaches the port when it has none. | The routes exist only with `--kafscale` and `--dag-runs true`; otherwise the answer is 404. A missing or wrong token gets 401. The server checks the document ([1.2](#12-checks-before-a-deployment)) and writes the record. |
+| Retrieval server: `POST /v1/dags/deploy` (body: the document as YAML, at most 262144 bytes) and `POST /v1/dags/stop?name=<dag>` | Callers with the run token of the server in the header `X-OpenTSx-Run-Token`. The token comes from `--dag-run-token` or `OPENTSX_DAG_RUN_TOKEN`. With `--dag-runs true` and no token, or a blank one, the server does not start. | The routes exist only with `--kafscale` and `--dag-runs true`; otherwise the answer is 404. A missing or wrong token gets 401. The server checks the document ([1.2](#12-checks-before-a-deployment)) and writes the record. |
 | `opentsx vectors deploy --kafscale <proxy> --domain <domain> --dag <file> [--by <who>]` and `opentsx vectors stop --kafscale <proxy> --domain <domain> --name <dag> [--by <who>]` | Whoever reaches the KafScale proxy. | The command checks the document and writes the record. |
 
 `<proxy>` is the bootstrap address of the KafScale proxy. `<domain>` defaults to `wind`. `<file>` is the DAG
@@ -332,8 +332,8 @@ state directory `<dir>` defaults to `vector-state`. Exactly one processor runs p
 the caller. It does not prove who the caller is.
 
 Implemented in: `opentsx-saas-backend/app/api/dags.py:32-113`, `opentsx-saas-backend/app/core/config.py:59`,
-`server/RetrievalServer.java:100-102,186-198,242-274,580-629`, `server/KafScaleFeed.java:246-289`,
-`vector/VectorProcessorApp.java:31-76`, `workbench/DeploymentsPanel.tsx:140-168`.
+`server/RetrievalServer.java:100-102,123-126,190-201,247-275,584-634`, `server/KafScaleFeed.java:248-291`,
+`vector/VectorProcessorApp.java:31-76`, `workbench/DeploymentsPanel.tsx:140-170`.
 
 ### 3.4 Read the state
 
@@ -351,8 +351,8 @@ latest control record is left out until the processor reports for the new deploy
 "No vector processor has reported for two minutes. Is one running for this domain?" when neither the deployment nor
 any sink report is younger than 120 s.
 
-Implemented in: `server/RetrievalServer.java:178-185`, `server/KafScaleFeed.java:294-313,321-323,339-378`,
-`workbench/deployments.ts:33-58`, `workbench/DeploymentsPanel.tsx:175`.
+Implemented in: `server/RetrievalServer.java:182-189`, `server/KafScaleFeed.java:294-313,321-323,339-378`,
+`workbench/deployments.ts:55-80`, `workbench/DeploymentsPanel.tsx:177`.
 
 ### 3.5 Limits
 
@@ -412,8 +412,8 @@ The shared test vectors of `align.vector` run in TypeScript, in Java as a whole 
 Rust.
 
 Implemented in: `workbench/ops.ts:834,838,857,864,871,877,884,893,896,905,911,919,935-946`,
-`workbench/flow.ts:493-510,675-681,719-727`, `workbench/workbench.test.ts:386-400`,
-`workbench/vector.test.ts:208-235`, `vector-tests/VectorAlignerTest.java:23`,
+`workbench/flow.ts:493-513,678-684,727-735`, `workbench/workbench.test.ts:386-400`,
+`workbench/vector.test.ts:212-239`, `vector-tests/VectorAlignerTest.java:23`,
 `vector-tests/VectorStreamTest.java:202`,
 `opentsx-wayang/src/test/java/org/opentsx/wayang/TsxVectorVectorsTest.java:46`,
 `rust/tsx-runner/tests/pair_vector_vectors.rs:40`.
@@ -442,7 +442,7 @@ This is what the vector processor holds for its two kinds of sinks: vectors (`op
 
 Implemented in: `vector/VectorStream.java:189-198,295-312`, `clean/SeriesStream.java:31-35,81-120,146-156`,
 `clean/CleanChain.java:24-25,375`, `vector/VectorJson.java:40-66`, `vector/VectorStoreBridge.java:26-34`,
-`kafka/Patience.java:69-96`, `workbench/deployments.ts:75-104`, `vector/VectorProcessor.java:258-294`,
-`workbench/vector.test.ts:208-235`, `workbench/clean.test.ts:22-57`,
+`kafka/Patience.java:69-96`, `workbench/deployments.ts:129-158`, `vector/VectorProcessor.java:258-294`,
+`workbench/vector.test.ts:212-239`, `workbench/clean.test.ts:22-57`,
 `opentsx-retrieval/src/test/java/org/opentsx/retrieval/clean/CleanChainTest.java:91-126`,
-`vector-tests/VectorStreamTest.java:202-258`, `opentsx-model/src/main/java/org/opentsx/model/Episodes.java:204`.
+`vector-tests/VectorStreamTest.java:202-258`, `opentsx-model/src/main/java/org/opentsx/model/Episodes.java:257`.

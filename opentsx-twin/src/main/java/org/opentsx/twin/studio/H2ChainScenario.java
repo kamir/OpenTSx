@@ -20,15 +20,15 @@ public final class H2ChainScenario implements StudioScenario {
 
     @Override
     public String title() {
-        return "Wasserstoffkette (Windpark, Elektrolyseur, Verdichter, Puffer, H₂-Leitung)";
+        return "Hydrogen chain (wind farm, electrolyzer, compressor, buffer, H₂ pipeline)";
     }
 
     @Override
     public String description() {
-        return "Die Übergabestation schließt um 01:00 ihr Ventil. Der Puffer füllt sich, der Elektrolyseur schaltet ab, "
-                + "der Direktvermarkter muss mehr Strom verkaufen. Später in der Nacht begrenzt eine Auflage den Park für eine "
-                + "Stunde, und die Betriebsführung regelt ihn für eine halbe Stunde ab. Sechs Stunden in Minutenschritten, "
-                + "synthetische Daten.";
+        return "The handover station closes its valve at 01:00. The buffer fills up, the electrolyzer shuts down, "
+                + "and the direct marketer has to sell more electricity. Later in the night a restriction limits the "
+                + "farm for one hour, and the operations management curtails it for half an hour. Six hours in "
+                + "one-minute steps, synthetic data.";
     }
 
     @Override
@@ -50,17 +50,18 @@ public final class H2ChainScenario implements StudioScenario {
     public List<Alternative> alternatives() {
         List<Alternative> out = new ArrayList<>();
         for (String policy : new String[]{"follow", "pressure-aware"}) {
-            String pName = policy.equals("follow") ? "Fahrweise unverändert" : "Elektrolyseur drosselt bei steigendem Druck";
+            String pName = policy.equals("follow") ? "operating policy unchanged"
+                    : "electrolyzer throttles as the pressure rises";
             Map<String, String> pol = policy.equals("follow") ? Map.of() : Map.of("ely", policy);
             if (!policy.equals("follow")) {
-                out.add(new Alternative("closed-" + policy, "Ventil bleibt zu · " + pName, reference(), pol, null));
+                out.add(new Alternative("closed-" + policy, "Valve stays closed · " + pName, reference(), pol, null));
             }
             for (int minute : new int[]{80, 100, 120, 140, 160, 180, 200, 240, 300}) {
                 List<Intervention> log = new ArrayList<>(reference());
                 log.add(Intervention.set(H2ChainDemo.START.plusSeconds(minute * 60L), "handover", "valve", 1,
                         "h2-handover", "valve reopened"));
                 out.add(new Alternative("reopen-" + minute + "-" + policy,
-                        String.format("Ventil wieder offen um %02d:%02d · %s", minute / 60, minute % 60, pName),
+                        String.format("Valve open again at %02d:%02d · %s", minute / 60, minute % 60, pName),
                         log, pol, null));
             }
         }
@@ -72,8 +73,10 @@ public final class H2ChainScenario implements StudioScenario {
         List<Forecast> out = new ArrayList<>();
         for (int now : new int[]{70, 90, 110, 130}) {
             String t = String.format("%02d:%02d", now / 60, now % 60);
-            out.add(new Forecast("now-" + now + "-follow", "ab " + t + " · Fahrweise unverändert", now, Map.of()));
-            out.add(new Forecast("now-" + now + "-aware", "ab " + t + " · Elektrolyseur drosselt bei steigendem Druck", now, Map.of("ely", "pressure-aware")));
+            out.add(new Forecast("now-" + now + "-follow", "from " + t + " · operating policy unchanged", now,
+                    Map.of()));
+            out.add(new Forecast("now-" + now + "-aware", "from " + t + " · electrolyzer throttles as the pressure rises",
+                    now, Map.of("ely", "pressure-aware")));
         }
         return out;
     }
@@ -91,48 +94,49 @@ public final class H2ChainScenario implements StudioScenario {
     @Override
     public List<Kpi> kpis() {
         return List.of(
-                new Kpi("ely.trips", "Schutzabschaltungen", "", 0, -1),
-                new Kpi("buffer.p_max_bar", "Höchster Druck im Puffer", "bar", 2, -1),
-                new Kpi("ely.h2_kg", "Erzeugter Wasserstoff", "kg", 1, 1),
-                new Kpi("handover.delivered_kg", "An Abnehmer geliefert", "kg", 1, 1),
-                new Kpi("handover.shortfall_kg", "Nicht geliefert", "kg", 1, -1),
-                new Kpi("compressor.energy_kwh", "Strom für die Verdichtung", "kWh", 0, 0),
-                new Kpi("park.curtailed_rules_kwh", "Nicht erzeugt wegen Auflagen", "kWh", 0, -1),
-                new Kpi("park.curtailed_dispatch_kwh", "Nicht erzeugt wegen Fahrbefehl", "kWh", 0, -1),
-                new Kpi("marketer.extra_kwh", "Ungeplante Mehreinspeisung", "kWh", 0, -1),
-                new Kpi("marketer.revenue_eur", "Erlös Einspeisung (ohne Ausgleichsenergie und H₂-Erlös)", "€", 0, 0));
+                new Kpi("ely.trips", "Protective shutdowns", "", 0, -1),
+                new Kpi("buffer.p_max_bar", "Highest pressure in the buffer", "bar", 2, -1),
+                new Kpi("ely.h2_kg", "Hydrogen produced", "kg", 1, 1),
+                new Kpi("handover.delivered_kg", "Delivered to the customer", "kg", 1, 1),
+                new Kpi("handover.shortfall_kg", "Not delivered", "kg", 1, -1),
+                new Kpi("compressor.energy_kwh", "Electricity for compression", "kWh", 0, 0),
+                new Kpi("park.curtailed_rules_kwh", "Not generated because of restrictions", "kWh", 0, -1),
+                new Kpi("park.curtailed_dispatch_kwh", "Not generated because of the dispatch command", "kWh", 0, -1),
+                new Kpi("marketer.extra_kwh", "Unplanned extra feed-in", "kWh", 0, -1),
+                new Kpi("marketer.revenue_eur", "Feed-in revenue (without balancing energy and H₂ revenue)", "€",
+                        0, 0));
     }
 
     @Override
     public Map<String, String> labels() {
         Map<String, String> m = new LinkedHashMap<>();
-        m.put("buffer.ttl_min", "Zeit bis Druckgrenze");
-        m.put("buffer.headroom_kg", "Restkapazität Puffer");
-        m.put("marketer.deviation_kw", "Fahrplanabweichung");
-        m.put("grid.p_direct_kw", "Direkt genutzte Erzeugung");
-        m.put("buffer.p_bar", "Druck im Puffer");
-        m.put("buffer.m_out_kgph", "Abgabe des Puffers an die Leitung");
-        m.put("buffer.m_net_kgph", "Netto-Zufluss Puffer");
-        m.put("line.p_in_bar", "Leitungsdruck am Anfang");
-        m.put("line.p_out_bar", "Leitungsdruck am Ende");
-        m.put("line.linepack_kg", "Wasserstoff in der Leitung");
-        m.put("compressor.p_el_kw", "Leistung Verdichter");
-        m.put("compressor.m_out_kgph", "Verdichteter Wasserstoff");
-        m.put("handover.m_out_kgph", "H₂-Lieferung");
-        m.put("handover.shortfall_kgph", "Fehlmenge");
-        m.put("handover.p_delivery_bar", "Lieferdruck");
-        m.put("offtake.request_kgph", "H₂-Anforderung");
-        m.put("park.p_avail_kw", "Verfügbare Leistung Windpark");
-        m.put("ely.p_el_kw", "Leistung Elektrolyseur");
-        m.put("ely.m_h2_kgph", "H₂-Erzeugung");
-        m.put("park.p_gen_kw", "Erzeugung Windpark");
-        m.put("grid.p_grid_kw", "Einspeisung Netz");
-        m.put("grid.residual_kw", "Residuum zur Zählermessung");
-        m.put("market.price_eur_mwh", "Strompreis");
-        m.put("battery.p_bat_kw", "Leistung Batterie");
-        m.put("battery.soc", "Ladezustand Batterie");
-        m.put("line.m_net_kgph", "Netto-Zufluss Leitung");
-        m.put("rules.limit_kw", "Leistungsgrenze (Betriebsvorgaben)");
+        m.put("buffer.ttl_min", "Time to pressure limit");
+        m.put("buffer.headroom_kg", "Buffer headroom");
+        m.put("marketer.deviation_kw", "Schedule deviation");
+        m.put("grid.p_direct_kw", "Generation used directly");
+        m.put("buffer.p_bar", "Pressure in the buffer");
+        m.put("buffer.m_out_kgph", "Buffer output to the pipeline");
+        m.put("buffer.m_net_kgph", "Net inflow to the buffer");
+        m.put("line.p_in_bar", "Pipeline pressure at the start");
+        m.put("line.p_out_bar", "Pipeline pressure at the end");
+        m.put("line.linepack_kg", "Hydrogen in the pipeline");
+        m.put("compressor.p_el_kw", "Compressor power");
+        m.put("compressor.m_out_kgph", "Compressed hydrogen");
+        m.put("handover.m_out_kgph", "H₂ delivery");
+        m.put("handover.shortfall_kgph", "Shortfall");
+        m.put("handover.p_delivery_bar", "Delivery pressure");
+        m.put("offtake.request_kgph", "H₂ request");
+        m.put("park.p_avail_kw", "Available wind farm power");
+        m.put("ely.p_el_kw", "Electrolyzer power");
+        m.put("ely.m_h2_kgph", "H₂ production");
+        m.put("park.p_gen_kw", "Wind farm generation");
+        m.put("grid.p_grid_kw", "Feed-in to the grid");
+        m.put("grid.residual_kw", "Residual to the meter reading");
+        m.put("market.price_eur_mwh", "Electricity price");
+        m.put("battery.p_bat_kw", "Battery power");
+        m.put("battery.soc", "Battery state of charge");
+        m.put("line.m_net_kgph", "Net inflow to the pipeline");
+        m.put("rules.limit_kw", "Power limit (operating rules)");
         return m;
     }
 
@@ -143,15 +147,15 @@ public final class H2ChainScenario implements StudioScenario {
 
     @Override
     public String decision() {
-        return "Bis wann muss das Ventil der Übergabestation wieder offen sein, und wann wird der Direktvermarkter informiert?";
+        return "By when must the valve of the handover station be open again, and when is the direct marketer told?";
     }
 
     @Override
     public Map<String, List<Limit>> limits() {
         TwinPlan p = plan();
         return Map.of("buffer.p_bar", List.of(
-                new Limit("Höchstdruck", param(p, "buffer", "pMaxBar")),
-                new Limit("Wiedereinschalten", param(p, "ely", "pResumeBar"))));
+                new Limit("Maximum pressure", param(p, "buffer", "pMaxBar")),
+                new Limit("Restart", param(p, "ely", "pResumeBar"))));
     }
 
     private static double param(TwinPlan plan, String atom, String name) {
