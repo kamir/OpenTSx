@@ -26,7 +26,7 @@
   * a `FlinkService` that submits processing-flow descriptors as Flink jobs.
   * One setting decides who may use the DAG, generator and Wayang routes above: `DAG_RUN_ROLE`. With `superuser`,
     the default, only administrators may. With `user`, every signed-in account may use all three, and sign-up is
-    open.
+    open. The backend says so in a line that starts with `DAG_RUN_ROLE=user:` when it starts.
 * **Frontend:**
   * **OpenTSx Flow Composer** (`/dashboard`, the page after sign-in): the flows of the account. Select a flow, open
     it in the workbench, create, rename, copy and delete flows, and start and stop the Smart Topic of a flow the

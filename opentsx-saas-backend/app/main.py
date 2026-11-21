@@ -55,6 +55,9 @@ async def lifespan(app: FastAPI):
     print("✅ Database initialized")
     if settings.TEST_LOGIN:
         print("TEST OPERATION: admin/admin signs in as administrator. Do not run this outside a lab network.")
+    if settings.DAG_RUN_ROLE == "user":
+        print("DAG_RUN_ROLE=user: every signed-in account may deploy and stop DAGs, run demo generators and run Wayang "
+              "deployments. Sign-up is open.", flush=True)
 
     yield
 

@@ -75,7 +75,8 @@ Who may write:
 * The SaaS backend knows the token and forwards for signed-in accounts (`POST /api/v1/dags/deploy`, `/stop`,
   `POST /api/v1/systems/<system>/generate`). `SAAS_DAG_RUN_ROLE=superuser` (default) allows administrators only.
   `user` allows every account to deploy and stop DAGs and to run demo generators; anyone can register, so that opens
-  writing to everyone who reaches the page.
+  writing to everyone who reaches the page. The backend log then holds a line that begins with
+  `DAG_RUN_ROLE=user: every signed-in account may deploy and stop DAGs`.
 * The frontend image answers `/retrieval/v1/dags/` with 403, so the write path of the retrieval server is not
   reachable through the node port. Reading through `/retrieval/` needs no account.
 * Inside the cluster every pod can reach the retrieval Service; the token is what keeps them from deploying. Whoever

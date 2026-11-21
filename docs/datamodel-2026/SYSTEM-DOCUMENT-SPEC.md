@@ -35,7 +35,8 @@ Code cited on this page:
 | `Origin.java` | `opentsx-twin/src/main/java/org/opentsx/twin/` |
 | `system.py` | `opentsx-saas-backend/app/models/` |
 | `systems.py`, `dags.py`, `wayang.py` | `opentsx-saas-backend/app/api/` |
-| `test_systems.py`, `test_wayang_rust.py` | `opentsx-saas-backend/tests/` |
+| `main.py` | `opentsx-saas-backend/app/` |
+| `test_systems.py`, `test_wayang_rust.py`, `test_dags.py` | `opentsx-saas-backend/tests/` |
 | `signals.ts`, `SignalsPlace.tsx`, `SystemPlace.tsx` | `opentsx-saas-frontend/src/systems/` |
 | `flow.ts`, `capabilities.ts`, `deployments.ts`, `types.ts`, `PublishClean.tsx`, `FlowComposer.tsx` | `opentsx-saas-frontend/src/workbench/` |
 | `Systems.tsx`, `Workbench.tsx` | `opentsx-saas-frontend/src/pages/` |
@@ -690,7 +691,8 @@ Implemented in: `SystemDoc.java:196-217`, `Systems.java:95-110`, `Systems.tsx:73
 * The backend admits administrators, or every signed-in user when the setting `DAG_RUN_ROLE` is `user`; it answers 403
   to any other user, and 503 when `RETRIEVAL_URL` is not set. It forwards the working copy of the user, and the run
   token `DAG_RUN_TOKEN` when it is set, to the retrieval server. The same setting admits DAG deployments and stops and
-  Wayang runs: `DAG_RUN_ROLE=user` opens all three to every signed-in user.
+  Wayang runs: `DAG_RUN_ROLE=user` opens all three to every signed-in user. With `user`, the backend prints a line at
+  startup that names the three and says that sign-up is open.
 * The retrieval server answers 404 unless it runs with `--kafscale` and `--dag-runs true`. With `--dag-runs true` it
   MUST have a run token (`--dag-run-token` or `OPENTSX_DAG_RUN_TOKEN`); without one, or with a blank one, it does not
   start. It answers 401 when the header `X-OpenTSx-Run-Token` does not carry its run token.
@@ -700,9 +702,10 @@ Implemented in: `SystemDoc.java:196-217`, `Systems.java:95-110`, `Systems.tsx:73
 * The series goes to the synthetic topic of the domain ([section 4.2](#s42-generated-series)). The answer holds
   `system`, `signal`, `topic`, `generator`, `fidelity` (`demo`), `episodes`, `samples`, `from`, `to` and `run`.
 
-Implemented in: `systems.py:203-220`, `dags.py:32-55`, `wayang.py:40-48`,
+Implemented in: `systems.py:203-220`, `dags.py:32-55`, `wayang.py:40-48`, `main.py:58-60`,
 `RetrievalServer.java:123-126,247-251,503-512,520-527,589-591`, `Systems.java:112-156`; tests
-`DagRunEndpointTest.java:188-197`, `SystemsTest.java:421-438`, `test_systems.py:164-169`, `test_wayang_rust.py:155-157`.
+`DagRunEndpointTest.java:188-197`, `SystemsTest.java:421-438`, `test_systems.py:164-169`, `test_wayang_rust.py:155-157`,
+`test_dags.py:154-189`.
 
 <a id="s8-web-application"></a>
 

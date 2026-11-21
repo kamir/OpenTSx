@@ -21,6 +21,8 @@ entries before 3.0.0 are grouped by date.
   `generatedSeries` on a server without a token throws an `IllegalStateException`. The startup line names DAG
   deployments, stops and generated series. The operator docs, the backend README and SYSTEM-DOCUMENT-SPEC 7.3 say
   that `DAG_RUN_ROLE=user` (`SAAS_DAG_RUN_ROLE` in k3s) also opens demo generators and Wayang runs to every account.
+  With `DAG_RUN_ROLE=user` the SaaS backend prints at startup that every signed-in account may deploy and stop DAGs,
+  run demo generators and run Wayang deployments, and that sign-up is open.
 - Documentation, comments and example files describe the current code. Chapter 15 drops the pair windows from the
   open items, links PAIR-WINDOWS-SPEC from P8 and lists the twin variants T and L as proofs of concept. The worked
   example of chapter 16 counts twelve components and sixteen signals and names the five flows that run. The `maxAge`

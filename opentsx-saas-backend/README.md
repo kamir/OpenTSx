@@ -195,7 +195,11 @@ who can register deploy and stop.
 
 `DAG_RUN_ROLE` is the one setting for every run the backend forwards. It also decides who may run the demo
 generators (`POST /api/v1/systems/<system>/generate`) and Wayang deployments (`/api/v1/dags/wayang-rust`): with
-`user`, every account may do all three.
+`user`, every account may do all three. The backend then prints at startup:
+
+```text
+DAG_RUN_ROLE=user: every signed-in account may deploy and stop DAGs, run demo generators and run Wayang deployments. Sign-up is open.
+```
 
 See full API documentation at: `/docs` (Swagger UI)
 
