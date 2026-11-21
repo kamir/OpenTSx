@@ -24,12 +24,15 @@ The "Implemented in" lines cite these files by short name:
 | `SystemDocTest.java` | `opentsx-retrieval/src/test/java/org/opentsx/retrieval/system/SystemDocTest.java` |
 | `SystemsTest.java` | `opentsx-retrieval/src/test/java/org/opentsx/retrieval/system/SystemsTest.java` |
 | `DecisionsTest.java` | `opentsx-retrieval/src/test/java/org/opentsx/retrieval/system/DecisionsTest.java` |
+| `RunsTest.java` | `opentsx-retrieval/src/test/java/org/opentsx/retrieval/runs/RunsTest.java` |
 | `WindPark.java` | `opentsx-twin/src/main/java/org/opentsx/twin/atoms/WindPark.java` |
 | `h2-chain.yaml` | `opentsx-twin/src/main/resources/twin/h2-chain.yaml` (the twin plan) |
 | `h2-chain.system.yaml` | [`systems/h2-chain.system.yaml`](../../systems/h2-chain.system.yaml) (the system document) |
 | `systems.py` | `opentsx-saas-backend/app/api/systems.py` |
 | `signals.ts` | `opentsx-saas-frontend/src/systems/signals.ts` |
 | `ModelsPlace.tsx` | `opentsx-saas-frontend/src/systems/ModelsPlace.tsx` |
+| `runs.ts` | `opentsx-saas-frontend/src/systems/runs.ts` |
+| `SimulatePlace.tsx` | `opentsx-saas-frontend/src/systems/SimulatePlace.tsx` |
 | `decision.v1` | [`schemas/opentsx.decision.v1.schema.json`](schemas/opentsx.decision.v1.schema.json) |
 | `decision-record.v1` | [`schemas/opentsx.decision-record.v1.schema.json`](schemas/opentsx.decision-record.v1.schema.json) |
 | `system.v1` | [`schemas/opentsx.system.v1.schema.json`](schemas/opentsx.system.v1.schema.json) |
