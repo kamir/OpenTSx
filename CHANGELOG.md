@@ -12,13 +12,6 @@ entries before 3.0.0 are grouped by date.
 
 ### Changed
 
-- Add the bounded `physical` deployment profile with unchanged assignment v1 texts, separate computation identity,
-  complete typed channels and scoped whole-topic ownership. Compare pinned capabilities, topic incarnations and
-  residency with host-owned facts before work, and retain located refusals through the UI. The default Rust
-  provider refuses unavailable incarnation evidence. Shared Java/Rust vectors, execution/admission regressions,
-  an explicit offline ownership upgrade, startup refusal for partial journals and generated lessons cover the contract.
-  U06 production operation and the physical ARM64 B4.2 measurement remain open.
-
 - Documentation, comments and example files describe the current code. Chapter 15 drops the pair windows from the
   open items, links PAIR-WINDOWS-SPEC from P8 and lists the twin variants T and L as proofs of concept. The worked
   example of chapter 16 counts twelve components and sixteen signals and names the five flows that run. The `maxAge`
@@ -446,6 +439,13 @@ entries before 3.0.0 are grouped by date.
   UI-to-Wayang-to-Rust orchestration and a separate
   bounded storage profile. The validators perform no network deployment or production fencing; the separate
   Rust runner and local Wayang rollout execute only their trusted-local bounded profiles.
+
+- Add the bounded `physical` deployment profile with unchanged assignment v1 texts, separate computation identity,
+  complete typed channels and scoped whole-topic ownership. Compare pinned capabilities, topic incarnations and
+  residency with host-owned facts before work, and retain located refusals through the UI. The default Rust
+  provider refuses unavailable incarnation evidence. Shared Java/Rust vectors, execution/admission regressions,
+  an explicit offline ownership upgrade, startup refusal for partial journals and generated lessons cover the contract.
+  U06 production operation and the physical ARM64 B4.2 measurement remain open.
 
 - Versioned learning workloads for all 30 executable UI/DAG operators and 25 documented library/infrastructure
   families, including MFDFA and RIS. Tests execute UI workloads and numerical library examples. Student lessons
