@@ -1,0 +1,40 @@
+{
+  "description" : "Run ids and run hashes of opentsx-twin runs; equal on every conforming JVM (TWIN-COUPLING-SPEC section 8). Regenerate with RunHashVectors.main.",
+  "runs" : [ {
+    "scenario" : "h2-chain",
+    "run" : "reference",
+    "mode" : "SHADOW",
+    "runId" : "h2-chain-6734f91571b28b83",
+    "hash" : "f2d8da6decd0a083"
+  }, {
+    "scenario" : "h2-chain",
+    "run" : "alternative reopen-120-pressure-aware",
+    "mode" : "WHAT_IF",
+    "runId" : "h2-chain-88430ec2d18b5374",
+    "hash" : "d440c361ca49e91f"
+  }, {
+    "scenario" : "h2-chain",
+    "run" : "forecast now-90-aware",
+    "mode" : "FORECAST",
+    "runId" : "h2-chain-f49c488473ad5c04",
+    "hash" : "454d2111fbdc5d93"
+  }, {
+    "scenario" : "h2-chain",
+    "run" : "variant L async, jitter 3, seed 7",
+    "mode" : "SHADOW",
+    "runId" : "h2-chain-9e07ef90518b138d",
+    "hash" : "33f06e4385dc6900"
+  }, {
+    "scenario" : "haus",
+    "run" : "reference",
+    "mode" : "SHADOW",
+    "runId" : "haus-erzgebirge-e0b53b1a33881fa8",
+    "hash" : "e98a6bd53804bbd5"
+  }, {
+    "scenario" : "boot",
+    "run" : "reference",
+    "mode" : "SHADOW",
+    "runId" : "boot-etap22-e9c037dcea05c21a",
+    "hash" : "0383dec1bd3f743e"
+  } ]
+}

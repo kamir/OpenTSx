@@ -14,8 +14,8 @@ import java.util.TreeMap;
 
 /**
  * Execution variant T: all atoms in one process, layered bulk-synchronous supersteps. Within a superstep the phases
- * run in order and each phase ends with a barrier; feedback wires cross the superstep boundary. On the same JVM, the
- * same plan, inputs, interventions and code give a bit-identical run (same {@link RunResult#hash()}).
+ * run in order and each phase ends with a barrier; feedback wires cross the superstep boundary. The same plan, inputs,
+ * interventions and code give a bit-identical run (same {@link RunResult#hash()}) on every conforming JVM.
  */
 public final class TwinRunner {
 

@@ -102,7 +102,7 @@ Implemented in: `Atom.java:17-73`, `PortSpec.java:4-13`, `PortKind.java:4-7`, `P
   climate. `opentsx-dwd` binds DWD series to these two input ports, with origin `MEASURED` for observations and
   `FORECAST` for MOSMIX.
 
-Implemented in: `AtomCatalog.java:46-90`, `atoms/Market.java:31-33`, `atoms/Weather.java:17-20,79-85`,
+Implemented in: `AtomCatalog.java:46-90`, `atoms/Market.java:31-33`, `atoms/Weather.java:17-20,80-86`,
 `opentsx-dwd/src/main/java/org/opentsx/dwd/TwinWeather.java:13-36`.
 
 <a id="3-wiring-plan"></a>
@@ -167,7 +167,7 @@ least one delayed wire, so every feedback loop crosses the superstep boundary.
 `TwinPlan.hash()` is the lower-case hex XxHash64 of the plan serialized as JSON with map keys sorted. It is part of
 every run id (§8).
 
-Implemented in: `TwinPlan.java:31-125,135-140,154-166`, `TwinRunner.java:65-73`, `Policies.java:31-37`; tests:
+Implemented in: `TwinPlan.java:33-131,141-146,160-172`, `TwinRunner.java:65-73`, `Policies.java:31-37`; tests:
 `TwinPlanTest.java:28-47,65-79`.
 
 <a id="4-policies-and-interventions"></a>
@@ -310,7 +310,7 @@ The message id is `<runId>/<k>/<phase>/<atom>/<port>`.
   intervention reaches the event topic of `opentsx-twin-live` only as an event of type `intervention` (§4).
 
 Implemented in: `PortMessage.java:8-13`, `Barrier.java:7-11`, `MessageSink.java:4-18`, `MessageLog.java:8-29`,
-`TwinRunner.java:107-113,140-146,158`, `LooseRunner.java:320-323,375`, `schema/AtomSchemas.java:35,60-100`,
+`TwinRunner.java:107-113,140-146,158`, `LooseRunner.java:319-322,374`, `schema/AtomSchemas.java:35,60-100`,
 `RunSetup.java:134-136`, `EventPublisher.java:51,53,66`; tests: `TwinShadowTest.java:103-131`,
 `LooseRunnerTest.java:41-45,70-106,224-233,274-277`, `schema/AtomSchemasTest.java:90-95`,
 `EventTopicLiveTest.java:98-116`.
@@ -332,9 +332,49 @@ twin-1|<plan hash>|<mode>|<inputs fingerprint>|<steps>[|<intervention>...][|poli
 
 The run hash chains every superstep: the seed is the XxHash64 of the run id; each superstep hashes the previous
 value, `k`, and for every atom in plan order its id, its state variables (name, double bits) and its outputs (name,
-double bits, origin). On the same JVM, two runs with the same run id are bit-identical and have the same
-`RunResult.hash()`. A JVM whose `Math` functions round the last bit differently can give other double bits and so
-another hash for the same run id; the Studio export leaves the hash out for this reason.
+double bits, origin). Two runs with the same run id and the same code are bit-identical and have the same
+`RunResult.hash()` on every conforming JVM: Java 17 and 21, any vendor and processor, interpreted or compiled, with or
+without the JVM's libm intrinsics. The Studio export carries the run hash of every run.
+
+The run hash is portable only if every value it chains is. Code whose results reach a hashed value, the order of
+hashed values or the run id (atoms, policies, runners, `TwinPlan`, `SeriesInputs`, and the plans, inputs and
+interventions that `opentsx-twin` builds) is hash-relevant. All main sources of `opentsx-twin` and `opentsx-model` are
+treated as hash-relevant. Hash-relevant code:
+
+* MUST use `StrictMath` for `exp`, `log`, `log10`, `log1p`, `expm1`, `pow`, `sin`, `cos`, `tan`, `asin`, `acos`, `atan`,
+  `atan2`, `sinh`, `cosh`, `tanh`, `cbrt` and `hypot`. `Math` may return another double within one ulp; HotSpot on
+  x86_64 returns other doubles with its libm intrinsics than without them (`-XX:-UseLibmIntrinsic`). `StrictMath`
+  returns the result of fdlibm 5.3 on every JVM. `Math.abs`, `min`, `max`, `floor`, `ceil`, `rint`, `round`, `sqrt`,
+  `fma`, `floorDiv`, `floorMod` and the arithmetic operators are exact or correctly rounded on every JVM since Java 17
+  and MAY be used.
+* MUST NOT use `Math.toRadians` or `Math.toDegrees`; the JDK does not fix their result. Multiply by the constant
+  `Math.PI / 180` instead.
+* MUST NOT draw from a seeded `java.util.SplittableRandom`, whose values the JDK fixes only within one program.
+  `SplitMix64` gives the values of OpenJDK's `SplittableRandom` on every JVM. `java.util.Random` is specified to the bit
+  and MAY be used.
+* MUST NOT reduce doubles with `DoubleStream.sum`, `average` or `summaryStatistics`, or with `Collectors.summingDouble`
+  or `averagingDouble`: their order of additions is not specified. Add in a fixed order.
+* MUST hash state variables and outputs in insertion order: `Atom.state()` returns its variables in a fixed order and
+  `StepContext` keeps the outputs in the order they are written. The iteration order of a `HashMap`, `HashSet`,
+  `Map.of` or `Set.of` MUST NOT reach a hashed value or the order of hashed values.
+* MUST NOT build text of the run id with `Double.toString` or string concatenation of a double: Java 17 writes some
+  doubles with other digits than Java 21 (`2e23` as `1.9999999999999998E23` instead of `2.0E23`). `TwinPlan.hash()`
+  writes doubles with Jackson's shortest-decimal writer (`StreamWriteFeature.USE_FAST_DOUBLE_WRITER`), and the
+  reasons built by `HouseScenario` and `BoatDemo` use `NumberOutput.toString(value, true)`.
+* MUST NOT read the wall clock, an unseeded random source, the default locale, charset or time zone, or run work in
+  parallel whose results are combined in the order the threads finish. Local time uses a named zone; its rules come
+  from the time-zone database of the JVM, so a run over a period whose rules differ between two database versions
+  gives different hashes on JVMs with these versions.
+
+Inputs computed outside `opentsx-twin` are data: the hash is equal for equal input values. A module that computes
+input values with `Math` functions can bind other values, and so get another run id and run hash, on another JVM.
+
+`PortableRunHashTest` fails when a main source of `opentsx-twin` or `opentsx-model` calls one of these `Math`
+functions, `SplittableRandom` or a floating-point stream reduction; when a run of `twin/run-hashes.v1.json` (the
+reference run of every Studio scenario, a what-if, a forecast and a variant L run with jitter) gives another run id
+or run hash; when a child JVM started with `-XX:-UseLibmIntrinsic` gives other run hashes than the JVM of the test;
+and when the plan hash or a delivery reason writes `2e23` with other digits than `2.0E23`. `StudioPageTest` compares
+the committed Studio page, with the run hashes of all its runs, with the export. CI runs both on Java 17 and 21.
 
 `RunResult`:
 
@@ -345,7 +385,13 @@ another hash for the same run id; the Studio export leaves the hash out for this
   labels `twin.mode`, `twin.kind` (`state` or `output`) and, for outputs, `twin.origin` (worst origin of the run).
 
 Implemented in: `RunSetup.java:110,163-179,195-233`, `RunResult.java:61-64,159-212`, `Snapshot.java:9-10`,
-`studio/StudioExport.java:147-151`; tests: `TwinShadowTest.java:92-101,133-147`, `studio/StudioPageTest.java:25-37`.
+`TwinPlan.java:117-131`, `SplitMix64.java:8-52`, `LooseRunner.java:548-553`, `atoms/Weather.java:29,61,152-193`,
+`atoms/Appliances.java:126`, `atoms/H2Compressor.java:53`, `atoms/BalanceNode.java:90-93`, `boat/Solar.java:33,141-157`,
+`demo/H2ChainDemo.java:56`, `demo/BoatDemo.java:411`, `house/HouseScenario.java:44-60`,
+`house/BillCalibration.java:308,567-575,659-668`, `house/SimulatedBills.java:79,98`,
+`studio/StudioExport.java:50-58,150-155,203`; tests: `TwinShadowTest.java:92-101,133-147`,
+`PortableRunHashTest.java:30-131`, `RunHashVectors.java:12-68`, `SplitMix64Test.java:8-22`,
+`studio/StudioPageTest.java:24-51`, `opentsx-twin/src/test/resources/twin/run-hashes.v1.json`.
 
 <a id="9-operating-modes"></a>
 
@@ -397,8 +443,8 @@ Rules:
   `j >= target − staleness`. With staleness 0 this is exactly the targeted value. With `ASYNC` any `j >= -1` is
   allowed, so the atom never waits. If no such step is visible, the atom waits this tick.
 * **Visibility.** Output of step `j` produced in tick `w` becomes visible in tick `w + 1 + lag + jitter(atom, j)`.
-  Jitter is drawn from a `SplittableRandom` seeded by `seed`, atom index and step, so visibility does not depend on
-  the order in which atoms are visited.
+  Jitter is `nextInt(jitter + 1)` of a `SplitMix64` seeded by `seed`, atom index and step, so visibility does not
+  depend on the order in which atoms are visited and is the same on every JVM (§8).
 * **Cost.** In one tick an atom that is neither down nor busy runs its held (multirate) steps, which cost no tick and
   emit no messages, and at most one real step. A real step keeps the processor busy for `stepTicks` ticks.
 * **Interventions.** The rule of §4 applies per atom.
@@ -417,8 +463,8 @@ Rules:
 `LooseRun.stats()` reports `ticks` (simulated wall time), `waitTicks` and `downTicks` per atom, and per wire `reads`,
 `staleReads` (age > 0), `meanAge` and `maxAge`, where age is the targeted step minus the step read.
 
-Implemented in: `LooseRunner.java:39-197,213-389,395-458,464-554`, `RunSetup.java:20-26`; tests:
-`LooseRunnerTest.java:28-277`.
+Implemented in: `LooseRunner.java:38-196,212-388,394-457,463-553`, `SplitMix64.java:8-52`, `RunSetup.java:20-26`;
+tests: `LooseRunnerTest.java:28-277`.
 
 <a id="11-coupling-results-and-design-rule"></a>
 
@@ -513,7 +559,7 @@ jitter, the lag of one atom, the step ticks of one atom or the outages of one at
 than a superstep of `h2-chain` or `haus` under lag 2 and jitter 3 alone, so the slow processor of the combined
 transport still costs ticks.
 
-Implemented in: `LooseRunner.java:143-158,161-164,279-287,324-327,410-431`, `studio/StudioExport.java:102-106`;
+Implemented in: `LooseRunner.java:142-157,160-163,278-286,323-326,409-430`, `studio/StudioExport.java:105-109`;
 tests: `LooseRunnerTest.java:28-143,224-277`.
 
 <a id="113-throughput"></a>
@@ -594,4 +640,4 @@ Feedback loops belong in one processor; between processors, bulk-synchronous cou
 * The cut between tight and loose coupling follows from the wiring plan: the strongly connected components are the
   tight parts.
 
-Implemented in: `LooseRunner.java:135-141,464-490`; tests: `LooseRunnerTest.java:173-198`.
+Implemented in: `LooseRunner.java:134-140,463-489`; tests: `LooseRunnerTest.java:173-198`.

@@ -639,6 +639,22 @@ entries before 3.0.0 are grouped by date.
 
 ### Fixed
 
+- The run hash of `opentsx-twin` is the same on every conforming JVM. Code whose values reach the hash called
+  `Math.sin`, `cos` and `pow`, whose results may differ between JVMs in the last bit: with `-XX:-UseLibmIntrinsic` all
+  48 Studio runs gave other run hashes on the same JVM, and a house plan calibrated on bills got another run id.
+  Hash-relevant code now uses `StrictMath` for transcendental functions and multiplies by `Math.PI / 180` instead of
+  calling `Math.toRadians`. The synthetic weather noise, the variant L jitter and the simulated bills draw from
+  `SplitMix64`, which gives the values of OpenJDK's `SplittableRandom`, whose values the JDK fixes only within one
+  program. The balance node and the bill calibration add in a fixed order instead of with `DoubleStream`.
+  `TwinPlan.hash()`, the delivery reasons of `HouseScenario`, the lever reasons of `BoatDemo` and `StudioExport` write
+  doubles with Jackson's shortest-decimal writer, because `Double.toString` writes some doubles with other digits on
+  Java 17 (`2e23` as `1.9999999999999998E23`). Run ids are unchanged, apart from plans calibrated on bills, whose run id
+  no longer depends on the JVM. Run hashes change where the JVM's `Math` differed from fdlibm, for example the house and
+  boat reference runs in `docs/devops/demos.md`; against `-XX:-UseLibmIntrinsic` only the H2 chain forecasts
+  `now-90-aware` and `now-130-aware` change, through the order of additions in the balance node. Section 8 of
+  `TWIN-COUPLING-SPEC.md` states the rules. `PortableRunHashTest` checks the sources, the run hashes pinned in
+  `twin/run-hashes.v1.json` and a child JVM without libm intrinsics. `StudioExport` writes the run hash of every run
+  again, and `StudioPageTest` checks it.
 - `tsx-runner`: the WASM test `scoped_fixture_is_cleared_after_unwinding` unwinds with `resume_unwind`, so it no
   longer prints a panic message. With `--nocapture 2>&1` that message could split another test's `test ... ok` line,
   and the B3 qualification then reported `guest_stack_is_bounded_by_the_configured_limit` as not executed.
@@ -648,11 +664,8 @@ entries before 3.0.0 are grouped by date.
   `twin/haus-erzgebirge.guide.yaml` are English. Numbers use English notation and dates read `1 Oct 02:29`. The
   downloads are named `<twin>-own.yaml`, `inventory-<twin>.yaml` and `studio-own-data-<scenario>.json`. The
   retrieval server returns the same English titles and labels in `GET /v1/systems/{id}/scenario`. Scenario ids, twin
-  names, plan parameters and run ids are unchanged. `StudioExport` leaves out the run hash: the hash chains the raw
-  bits of every value and differs between JVMs whose `Math` functions round the last bit differently, so the
-  committed page could not be rebuilt byte for byte. Section 8 of `TWIN-COUPLING-SPEC.md` limits the equal run hash to
-  runs on the same JVM. The page is rebuilt with `tools/build_studio.py`; `StudioPageTest` and
-  `tools/test_studio_page.py` check it.
+  names, plan parameters and run ids are unchanged. The page is rebuilt with `tools/build_studio.py`;
+  `StudioPageTest` and `tools/test_studio_page.py` check it.
 - The `statsmodels` 0.15.0 pin of `python-package` now matches `deploy/local-cp/requirements.in` and
   `requirements.lock`. With the old 0.14.6 constraint, the install in `standalone-numerics.md` failed with
   `ResolutionImpossible`, and `test_finite_service_http.py` expected 0.14.6. `statsmodels` 0.15.0 adds the pinned

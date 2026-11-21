@@ -12,9 +12,9 @@ deploy/k3s/40-demo.sh all     # kafscale-check, windpark-sim, stats, metadata, t
 `deploy/k3s/60-probe.sh` runs the same demos plus the install steps and checks each result (PASS/FAIL report, see
 [operations](operations.md#try-it-locally-first-the-probe)).
 
-The outputs below are real outputs of the same commands (taken from the staged image content on a JDK 21 machine).
-The twin outputs are deterministic: you see the same numbers and run ids. The run hashes shown are those of that
-JDK 21 machine. Another JVM can print other run hashes, because the hash chains the raw bits of every value
+The outputs below are real outputs of the same commands (taken from the staged image content on a JDK 21 machine;
+the twin outputs checked again with Java 17 and 21 on x86_64, with and without the JVM's libm intrinsics). The twin
+outputs are deterministic: you see the same numbers, run ids and run hashes on every JVM
 ([TWIN-COUPLING-SPEC section 8](../datamodel-2026/TWIN-COUPLING-SPEC.md#8-run-identity-and-run-record)). The
 attributes of an event in braces can appear in another order. Lines such as `Picked up JAVA_TOOL_OPTIONS` and SLF4J
 logging are left out.
@@ -196,7 +196,7 @@ deploy/k3s/40-demo.sh house
 House twin 'haus-erzgebirge' - ALL NUMBERS ARE INVENTED EXAMPLE ASSUMPTIONS (not calibrated)
 
 1. Shadow: reference year 2024-12-31T23:00:00Z + 8760 x PT1H
-   run haus-erzgebirge-e0b53b1a33881fa8  hash b9e4011a7f20ce3a  origin SYNTHETIC
+   run haus-erzgebirge-e0b53b1a33881fa8  hash e98a6bd53804bbd5  origin SYNTHETIC
    2025-04-15T06:00  tank       reorder_warning  {level_l=599.557}
    ...
    electricity          3007 kWh  (heating pump/burner 701, standby 144 = 4.8 %, base load 156 W, peak 2.0 kW)
@@ -250,7 +250,7 @@ deploy/k3s/40-demo.sh boat
 
 ```text
 Boat twin boot-etap22: synthetic two-week trip HAXSHSAXXSHSAS from 2026-07-04 (CEST), step 15 min.
-1. Shadow (reference): run boot-etap22-e9c037dcea05c21a  hash beec6c32a572b246
+1. Shadow (reference): run boot-etap22-e9c037dcea05c21a  hash 0383dec1bd3f743e
    day        modes       PV Wh  PV used    shore  load Wh  SoC min    unmet
    2026-07-04 H             839      616      386      847      96%        0
    ...
@@ -370,14 +370,13 @@ The export also runs in the cluster as a Job:
 deploy/k3s/40-demo.sh studio-export
 ```
 
-It prints the file (1,344,491 bytes for this commit) and its SHA-256
-(`856fe16de938c0e26e6f4d4d2cd06225ec63f217b2d9feea50bce7dfba410b41` for this commit).
+It prints the file (1,345,739 bytes for this commit) and its SHA-256
+(`b0b957b2c96984ba1a3edad9dc1babca3ef78537b61125eceb9f1282b9b53fef` for this commit).
 
-The export is deterministic: the same code gives the same checksum, and the page built from it is byte-identical to
-`docs/prototypes/smart-topics-studio.html` (checked for this commit with Java 21 on x86_64, with and without the
-JVM's libm intrinsics). The export leaves out the run hash, because the hash chains the raw bits of every value and
-differs between JVMs whose `Math` functions round the last bit differently. `StudioPageTest` fails when the page and
-the export differ.
+The export is deterministic: the same code gives the same checksum on every JVM, and the page built from it is
+byte-identical to `docs/prototypes/smart-topics-studio.html` (checked for this commit with Java 17 and 21 on x86_64,
+with and without the JVM's libm intrinsics). The export carries the run id and the run hash of every run.
+`StudioPageTest` fails when the page and the export differ.
 
 ## Retrieval server
 
