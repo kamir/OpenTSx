@@ -19,7 +19,7 @@
 # and removes the .env.before-restore it wrote (one that is a link stays); a failed volume step writes none, so the
 # rerun also works after .env changed. That namespace check keeps the rerun in the same namespace. A .env that already
 # equals the backup's env stays, and so does the kept copy. Without env among the parts and without .env, a missing
-# namespace names 71-restore.sh DIR --only env first when the backup holds env.
+# namespace or PVC names 71-restore.sh DIR --only env first when the backup holds env.
 # The KafScale topics are not touched.
 # Caution: the statistics checkpoint holds positions (offsets) in tsx.<domain>.episodes.v2. Restore it only against the
 # SAME topics; if the topics were deleted and recreated, skip stats-state (the processor then re-reads from the start).
@@ -122,6 +122,7 @@ if (( ${#PARTS[@]} )); then
     rerun="71-restore.sh $DIR"
     [[ -z "$ONLY" ]] || rerun+=" --only $(IFS=,; echo "${PARTS[*]}")"
     ns_hint="run 71-restore.sh $DIR --only env, then 20-configure.sh, 10-build.sh, 11-import-images.sh and 30-deploy.sh, then $rerun"
+    pvc_hint="$ns_hint"
   fi
   require_namespace "$ns_hint"
   for part in "${PARTS[@]}"; do

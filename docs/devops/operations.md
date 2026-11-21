@@ -299,8 +299,9 @@ deploy/k3s/71-restore.sh DIR --only stats-state --yes
   On a new cluster, restore `env` first (`71-restore.sh DIR --only env`, needs no cluster), then run
   `20-configure.sh`, `10-build.sh`, `11-import-images.sh` and `30-deploy.sh`, then restore the volumes without `env`
   (`71-restore.sh DIR`). A restore without `env` and without `.env` names these steps when the backup holds `env` and
-  the namespace does not exist. For a backup of another namespace, restore `env` alone first, or, when the `MANIFEST`
-  and the env of the backup name the same namespace, set `OPENTSX_NS` to it. For a `MANIFEST` without a `namespace=` line,
+  the namespace or a PVC does not exist. For a backup of another namespace, restore `env` alone first, or, when the
+  `MANIFEST` and the env of the backup name the same namespace, set `OPENTSX_NS` to it.
+  For a `MANIFEST` without a `namespace=` line,
   only restoring `env` alone first helps. `OPENTSX_NS` set in the shell wins over `.env`, and restoring `env` does not
   change it: unset it or set it to the namespace of the backup. `70-backup.sh` stops with exit 1 before it writes
   anything when `OPENTSX_NS` set in the shell differs from the namespace of `.env` (or of `env.example` when `.env`

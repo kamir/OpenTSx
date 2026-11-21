@@ -45,7 +45,8 @@ public class EventFlowAnalysisConsumer {
 
     /**
      * Measures the latency of the events until more than {@link #GIVE_UP} polls in total are empty, then writes the
-     * table to {@code folder} or, with {@code showGui} true, opens and stores the chart.
+     * table to {@code folder} or, with {@code showGui} true, opens and stores the chart. When no event arrived,
+     * getStatisticData throws IllegalStateException and nothing is written.
      */
     static void runConsumer(Consumer<String, GenericRecord> consumer, String showGui, String folder) {
 

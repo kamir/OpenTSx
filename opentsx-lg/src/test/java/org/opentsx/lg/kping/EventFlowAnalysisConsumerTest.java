@@ -117,6 +117,7 @@ class EventFlowAnalysisConsumerTest {
         assertEquals("getStatisticData: the series OpenTSx_Events has no values; expected at least 1 value",
                 e.getMessage());
         assertTrue(consumer.closed());
+        assertTrue(Files.notExists(dir.resolve("plots")));
     }
 
     @Test

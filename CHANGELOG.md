@@ -1236,6 +1236,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   contain. `DockerImageTest` fails when any of these comes back.
 - `opentsx-core`: the package-private lists `mrv2` and `mrv2B` of `TSPropertyTester`, which nothing charted or read;
   `TSPropertyTester.addRow` added an empty count series to `mrv2`.
+- opentsx-lg ping tools: `run_LatencyProbe_CONS.sh` no longer prints `DISPLAY` and runs no `java
+  -XshowSettings:properties -version` before it starts the consumer.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -2848,8 +2850,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `10-build.sh`, `11-import-images.sh` and `30-deploy.sh`, then `71-restore.sh <dir>` with the `--only` of the run, so
   a new cluster is configured from the backup and not from `env.example`; with `deploy/k3s/.env` present the hint
   names the four steps only.
-- The question of `deploy/k3s/71-restore.sh` names the env file it replaces, relative to the repository, instead of
-  always `deploy/k3s/.env`.
+- The question of `deploy/k3s/71-restore.sh` names the env file it replaces instead of always `deploy/k3s/.env`: an
+  absolute path inside the repository relative to it, an absolute `OPENTSX_ENV_FILE` outside it in full, a relative
+  one as given.
 - When the rename of `<env>.restoring` over `.env` fails, `deploy/k3s/71-restore.sh` removes the `.env.before-restore`
   it wrote (one that is a link stays), so the rerun works after `.env` changed; the line `previous .env kept as
   <file>` appears only after the rename succeeded.
@@ -2886,6 +2889,16 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - tools: `tools/check_tracked_config.py` no longer reads a tracked file through a directory that the working tree
   replaced by a symbolic link; git shows such a file as deleted. It used to read the file of that name outside the
   repository.
+- `deploy/k3s/71-restore.sh` without `env` among the parts now names `71-restore.sh <dir> --only env` first for a PVC
+  that is missing in an existing namespace, as it already did for a missing namespace, when `deploy/k3s/.env` is
+  missing and the backup holds `env`. With `deploy/k3s/.env` present, the hint for a missing PVC still names
+  `30-deploy.sh`.
+- The ping tool consumer README now says that a run that reads no event writes no table and stops with
+  `getStatisticData: the series OpenTSx_Events has no values; expected at least 1 value`. It also says that the group
+  `KPING-Consumer` starts at the latest offset while it has no committed offset.
+- `deploy/k3s/README.md` names `OPENTSX_ENV_FILE`, the env file the k3s scripts use instead of `deploy/k3s/.env`, and
+  says how the question of `71-restore.sh` shows it: an absolute path inside the repository relative to it, an
+  absolute path outside it in full, a relative path as given.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

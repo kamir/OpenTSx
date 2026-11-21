@@ -102,6 +102,19 @@ the run, with `--only <volume parts>` when the run named `--only`:
 error: namespace opentsx: not found; run 71-restore.sh ./opentsx-backup-20261012T021700Z --only env, then 20-configure.sh, 10-build.sh, 11-import-images.sh and 30-deploy.sh, then 71-restore.sh ./opentsx-backup-20261012T021700Z
 ```
 
+A PVC that does not exist in a namespace that does gets the same hint in that case:
+
+```text
+error: PVC opentsx-data: not found in namespace opentsx; run 71-restore.sh ./opentsx-backup-20261012T021700Z --only env, then 20-configure.sh, 10-build.sh, 11-import-images.sh and 30-deploy.sh, then 71-restore.sh ./opentsx-backup-20261012T021700Z
+```
+
+With `deploy/k3s/.env`, or with a backup that holds no `env`, the hint for a PVC that does not exist names
+`30-deploy.sh`:
+
+```text
+error: PVC opentsx-data: not found in namespace opentsx; run 30-deploy.sh first (opentsx-iceberg-catalog needs LAKE=true, opentsx-minio LAKE=true and LAKE_MINIO=true)
+```
+
 `30-deploy.sh` and `90-teardown.sh` take a namespace that does not exist as nothing to clean up. Any other failure,
 for example an API server that cannot be reached, is not reported as a missing namespace by any of these scripts.
 `30-deploy.sh` reads the nodes first and stops with `cluster not reachable with 'kubectl' (see 00-prereqs.sh)` when
@@ -154,8 +167,9 @@ error: --logs: the logs of 1 Deployment(s) cannot be read; see the warn lines ab
 ```
 
 `71-restore.sh` and `90-teardown.sh` ask before they change anything. The question of `71-restore.sh` names the
-parts and, with `env` among them, the env file it replaces: an absolute path inside the repository relative to the
-repository, any other path as the script was given it:
+parts and, with `env` among them, the env file it replaces: `deploy/k3s/.env`, or the file that the environment
+variable `OPENTSX_ENV_FILE` names. An absolute path inside the repository is shown relative to the repository. An
+absolute `OPENTSX_ENV_FILE` outside the repository is shown as that absolute path, a relative one as given:
 
 ```text
 This REPLACES the content of: data and deploy/k3s/.env in namespace opentsx.

@@ -4,8 +4,11 @@
 
 K3S_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$K3S_DIR/../.." && pwd)"
-# OPENTSX_ENV_FILE / OPENTSX_OVERLAY: only for 60-probe.sh --dry-run (renders into a throw-away overlay; it must sit
-# two levels below deploy/k3s, like overlays/local, because the overlay refers to ../../base)
+# OPENTSX_ENV_FILE / OPENTSX_OVERLAY: the env file and the overlay the scripts use instead of deploy/k3s/.env and
+# overlays/local. 60-probe.sh --dry-run renders into a throw-away overlay with them, and the tests in deploy/k3s/test
+# keep deploy/k3s/.env out of their runs. The overlay must sit two levels below deploy/k3s, like overlays/local,
+# because it refers to ../../base. The scripts change the working directory only in subshells, so a relative
+# OPENTSX_ENV_FILE stays valid and the messages show it as given.
 ENV_FILE="${OPENTSX_ENV_FILE:-$K3S_DIR/.env}"
 OVERLAY="${OPENTSX_OVERLAY:-$K3S_DIR/overlays/local}"
 

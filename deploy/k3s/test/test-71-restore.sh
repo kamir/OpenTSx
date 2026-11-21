@@ -7,8 +7,9 @@
 # read, a missing PVC, a PVC that cannot be read and a failed step in the helper pod exit 1 with their message; without
 # env a missing namespace names 20-configure.sh, 10-build.sh, 11-import-images.sh and 30-deploy.sh, after
 # 71-restore.sh <dir> --only env and before 71-restore.sh <dir> (with the --only of the run) when the backup holds env
-# and there is no env file; the question and a restored env name the env file in use, relative to the repository when
-# it lies in it, the question a relative OPENTSX_ENV_FILE as given, and the restored env the same four steps; with env
+# and there is no env file, and so does a missing PVC, which names 30-deploy.sh otherwise; the question and a restored
+# env name the env file in use, relative to the repository when it lies in it, the question a relative
+# OPENTSX_ENV_FILE as given, and the restored env the same four steps; with env
 # among the parts a missing namespace or PVC says how to restore env first (env, 20-configure.sh, 10-build.sh,
 # 11-import-images.sh, 30-deploy.sh, the volumes), following that hint after 20-configure.sh rewrote .env keeps the
 # copy of the .env from before the restore, and restoring env again then stops before it changes .env or that copy,
@@ -330,14 +331,16 @@ else
 fi
 
 # without env among the parts, a backup that holds env and no env file name env first, so that 20-configure.sh starts
-# from the backup's configuration and not from env.example
-for name in env-first env-first-only; do
+# from the backup's configuration and not from env.example; a missing PVC in an existing namespace does the same
+for name in env-first env-first-only env-first-pvc env-first-pvc-only; do
   args=(--yes); rerun=""
   [[ "$name" == *-only ]] && { args+=(--only data); rerun=" --only data"; }
-  STUB_ENV=(CLUSTER=up NAMESPACE=missing)
+  STUB_ENV=(CLUSTER=up NAMESPACE=missing); missing="namespace opentsx: not found"
+  [[ "$name" == *-pvc* ]] \
+    && { STUB_ENV=(CLUSTER=up PVC_STATE=missing); missing="PVC opentsx-data: not found in namespace opentsx"; }
   restore "$name" "$WORK/env-data" "${args[@]}"
   STUB_ENV=()
-  message="error: namespace opentsx: not found; run 71-restore.sh $WORK/env-data --only env, then 20-configure.sh, 10-build.sh, 11-import-images.sh and 30-deploy.sh, then 71-restore.sh $WORK/env-data$rerun"
+  message="error: $missing; run 71-restore.sh $WORK/env-data --only env, then 20-configure.sh, 10-build.sh, 11-import-images.sh and 30-deploy.sh, then 71-restore.sh $WORK/env-data$rerun"
   if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/$name.out"; then
     failed "$name: exit $rc, expected 1 and the message: $message"; sed 's/^/    /' "$WORK/$name.out"
   elif [[ -e "$WORK/none.env" ]]; then
@@ -346,18 +349,23 @@ for name in env-first env-first-only; do
     echo "ok   $name"
   fi
 done
-# with an env file the configuration is there already: the hint names the four steps only
+# with an env file the configuration is there already: a missing namespace names the four steps only, a missing PVC
+# 30-deploy.sh
 printf 'OPENTSX_DOMAIN=original\n' > "$WORK/env-first-file.env"
-STUB_ENV=(CLUSTER=up NAMESPACE=missing OPENTSX_ENV_FILE="$WORK/env-first-file.env")
-restore env-first-with-env-file "$WORK/env-data" --yes
-STUB_ENV=()
-message="error: namespace opentsx: not found; run 20-configure.sh, 10-build.sh, 11-import-images.sh and 30-deploy.sh first"
-if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/env-first-with-env-file.out"; then
-  failed "env-first-with-env-file: exit $rc, expected 1 and the message: $message"
-  sed 's/^/    /' "$WORK/env-first-with-env-file.out"
-else
-  echo "ok   env-first-with-env-file"
-fi
+for case in "env-first-with-env-file|NAMESPACE=missing|namespace opentsx: not found; run 20-configure.sh, 10-build.sh, 11-import-images.sh and 30-deploy.sh first" \
+  "env-first-pvc-with-env-file|PVC_STATE=missing|PVC opentsx-data: not found in namespace opentsx; run 30-deploy.sh first (opentsx-iceberg-catalog needs LAKE=true, opentsx-minio LAKE=true and LAKE_MINIO=true)"; do
+  IFS='|' read -r name state hint <<< "$case"
+  STUB_ENV=(CLUSTER=up "$state" OPENTSX_ENV_FILE="$WORK/env-first-file.env")
+  restore "$name" "$WORK/env-data" --yes
+  STUB_ENV=()
+  message="error: $hint"
+  if (( rc != 1 )) || ! grep -qxF -- "$message" "$WORK/$name.out"; then
+    failed "$name: exit $rc, expected 1 and the message: $message"
+    sed 's/^/    /' "$WORK/$name.out"
+  else
+    echo "ok   $name"
+  fi
+done
 
 # the question names the env file it replaces: OPENTSX_ENV_FILE as given (run from $WORK), or deploy/k3s/.env relative
 # to the repository
