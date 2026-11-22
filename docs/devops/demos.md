@@ -13,8 +13,8 @@ deploy/k3s/40-demo.sh all     # kafscale-check, windpark-sim, stats, metadata, t
 [operations](operations.md#try-it-locally-first-the-probe)).
 
 The outputs below are real outputs of the same commands (taken from the staged image content on a JDK 21 machine).
-The twin outputs are deterministic: you see the same numbers and run ids. The run hashes shown are those of that
-JDK 21 machine. Another JVM can print other run hashes, because the hash chains the raw bits of every value
+The twin, house and boat outputs were checked again with OpenJDK 17 and 21 on x86_64, with and without the JVM's
+libm intrinsics. The twin outputs are deterministic: you see the same numbers, run ids and run hashes on every JVM
 ([TWIN-COUPLING-SPEC section 8](../datamodel-2026/TWIN-COUPLING-SPEC.md#8-run-identity-and-run-record)). The
 attributes of an event in braces can appear in another order. Lines such as `Picked up JAVA_TOOL_OPTIONS` and SLF4J
 logging are left out.
@@ -196,7 +196,7 @@ deploy/k3s/40-demo.sh house
 House twin 'haus-erzgebirge' - ALL NUMBERS ARE INVENTED EXAMPLE ASSUMPTIONS (not calibrated)
 
 1. Shadow: reference year 2024-12-31T23:00:00Z + 8760 x PT1H
-   run haus-erzgebirge-e0b53b1a33881fa8  hash b9e4011a7f20ce3a  origin SYNTHETIC
+   run haus-erzgebirge-e0b53b1a33881fa8  hash e98a6bd53804bbd5  origin SYNTHETIC
    2025-04-15T06:00  tank       reorder_warning  {level_l=599.557}
    ...
    electricity          3007 kWh  (heating pump/burner 701, standby 144 = 4.8 %, base load 156 W, peak 2.0 kW)
@@ -220,14 +220,17 @@ deploy/k3s/40-demo.sh house -- --calibrate /opt/opentsx/share/twin/abrechnungen-
 ```
 
 ```text
-0. Calibration against bills (9 twin runs)
-   building.lossWPerK          212.704   (rel. std. error 7.2 %)
-   dhw.scale                     0.935   (rel. std. error 100.4 %)
-   appliances.scale              0.950   (rel. std. error 1.4 %)
-   identifiable false (condition 2.77e+04, max correlation 0.996)
+0. Calibration against bills (7 twin runs)
+   building.lossWPerK          209.351   (rel. std. error 7.9 %)
+   dhw.scale                     1.114   (rel. std. error 89.1 %)
+   appliances.scale              0.952   (rel. std. error 1.4 %)
+   identifiable false (condition 1.98e+04, max correlation 0.997)
    ...
    strom_kwh      CV(RMSE) 1.4 %, NMBE +0.0 %
    heizoel_liter  CV(RMSE) 0.4 %, NMBE -0.1 %
+   ...
+1. Shadow: reference year 2024-12-31T23:00:00Z + 8760 x PT1H
+   run haus-erzgebirge-7879c3990c50a8cc  hash 3fefef796772d15c  origin SYNTHETIC
 ```
 
 With **your** bills (never commit them; locally they belong in `config/private/`):
@@ -250,7 +253,7 @@ deploy/k3s/40-demo.sh boat
 
 ```text
 Boat twin boot-etap22: synthetic two-week trip HAXSHSAXXSHSAS from 2026-07-04 (CEST), step 15 min.
-1. Shadow (reference): run boot-etap22-e9c037dcea05c21a  hash beec6c32a572b246
+1. Shadow (reference): run boot-etap22-e9c037dcea05c21a  hash 0383dec1bd3f743e
    day        modes       PV Wh  PV used    shore  load Wh  SoC min    unmet
    2026-07-04 H             839      616      386      847      96%        0
    ...
@@ -278,9 +281,13 @@ deploy/k3s/40-demo.sh boat -- --data /private/bootsdaten.csv --calibrate
 
 ```text
 Boat twin boot-etap22 on operating data: 72 rows, 285 steps from 2026-07-03T22:00:00Z
+   ...
 1. Shadow on the data: run boot-etap22-51a1110d71deda54, SoC RMSE model vs. measured 1.9 %-points
-   calibrated in 7 runs: RMSE 1.9 -> 1.1 %-points
-     laptops.scale    1.236
+   calibrated [laptops.scale] in 7 runs (parts measured in more than half of the steps are left out)
+     RMSE station.soc                 0.019 ->    0.011
+     RMSE station.load_residual_w    12.059 ->   11.735
+     laptops.scale    1.241
+   shadow with calibrated values: SoC RMSE 1.1 %-points
 ```
 
 ## DWD weather (MOSMIX)
@@ -370,14 +377,13 @@ The export also runs in the cluster as a Job:
 deploy/k3s/40-demo.sh studio-export
 ```
 
-It prints the file (1,344,491 bytes for this commit) and its SHA-256
-(`856fe16de938c0e26e6f4d4d2cd06225ec63f217b2d9feea50bce7dfba410b41` for this commit).
+It prints the file (1,345,739 bytes for this commit) and its SHA-256
+(`b0b957b2c96984ba1a3edad9dc1babca3ef78537b61125eceb9f1282b9b53fef` for this commit).
 
-The export is deterministic: the same code gives the same checksum, and the page built from it is byte-identical to
-`docs/prototypes/smart-topics-studio.html` (checked for this commit with Java 21 on x86_64, with and without the
-JVM's libm intrinsics). The export leaves out the run hash, because the hash chains the raw bits of every value and
-differs between JVMs whose `Math` functions round the last bit differently. `StudioPageTest` fails when the page and
-the export differ.
+The export is deterministic: the same code gives the same checksum on every JVM, and the page built from it is
+byte-identical to `docs/prototypes/smart-topics-studio.html` (checked for this commit with Java 17 and 21 on x86_64,
+with and without the JVM's libm intrinsics, and with the default locales `ar-EG`, `fa-IR` and `de-DE`). The export
+carries the run id and the run hash of every run. `StudioPageTest` fails when the page and the export differ.
 
 ## Retrieval server
 

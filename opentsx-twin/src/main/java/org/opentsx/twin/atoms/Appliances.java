@@ -123,7 +123,7 @@ public final class Appliances extends Atom {
         double h = clock.hour(t);
         boolean we = clock.weekend(t);
         // +1 at the winter solstice, -1 at the summer solstice
-        double winter = Math.cos(2 * Math.PI * (clock.dayOfYear(t) + 10) / 365.25);
+        double winter = StrictMath.cos(2 * Math.PI * (clock.dayOfYear(t) + 10) / 365.25);
         boolean standbyOff = ctx.control("standby_off") > 0;
         double dt = ctx.dtHours();
         double total = 0;

@@ -1,5 +1,6 @@
 package org.opentsx.twin.house;
 
+import com.fasterxml.jackson.core.io.NumberOutput;
 import org.opentsx.twin.Intervention;
 import org.opentsx.twin.TwinPlan;
 
@@ -44,7 +45,8 @@ public final class HouseScenario {
     public static List<Intervention> oilDelivery(String tank, Instant at, double litres, Duration step) {
         double hours = step.toNanos() / 3.6e12;
         return List.of(
-                Intervention.set(at, tank, "delivery_lph", litres / hours, "homeowner", "oil delivery " + litres + " l"),
+                Intervention.set(at, tank, "delivery_lph", litres / hours, "homeowner",
+                        "oil delivery " + NumberOutput.toString(litres, true) + " l"),
                 Intervention.release(at.plus(step), tank, "delivery_lph", "homeowner", "delivery done"));
     }
 
@@ -52,7 +54,8 @@ public final class HouseScenario {
     public static List<Intervention> woodDelivery(String store, Instant at, double ster, Duration step) {
         double hours = step.toNanos() / 3.6e12;
         return List.of(
-                Intervention.set(at, store, "delivery_ster_ph", ster / hours, "homeowner", "wood " + ster + " Ster"),
+                Intervention.set(at, store, "delivery_ster_ph", ster / hours, "homeowner",
+                        "wood " + NumberOutput.toString(ster, true) + " Ster"),
                 Intervention.release(at.plus(step), store, "delivery_ster_ph", "homeowner", "delivery done"));
     }
 

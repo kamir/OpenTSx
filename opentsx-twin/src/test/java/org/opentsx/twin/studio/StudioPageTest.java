@@ -9,13 +9,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** The committed Studio page carries the export of the current scenarios, and the export carries no run hash. */
+/** The committed Studio page carries the export of the current scenarios, run hashes included. */
 class StudioPageTest {
 
     private static final Path PAGE = Path.of("..", "docs", "prototypes", "smart-topics-studio.html");
@@ -23,7 +23,7 @@ class StudioPageTest {
     private static final String DATA_END = ";\nlet SC = null";
 
     @Test
-    void exportLeavesOutTheRunHash() {
+    void exportCarriesTheRunHash() {
         Map<String, Object> m = StudioExport.export(new H2ChainScenario());
         List<Object> runs = new ArrayList<>();
         runs.add(m.get("reference"));
@@ -32,7 +32,20 @@ class StudioPageTest {
         assertEquals(28, runs.size());
         for (Object run : runs) {
             Map<?, ?> r = (Map<?, ?>) run;
-            assertFalse(r.containsKey("hash"), "run " + r.get("runId") + " carries a run hash");
+            assertTrue(String.valueOf(r.get("hash")).matches("[0-9a-f]{16}"), "run " + r.get("runId") + " has no hash");
+        }
+    }
+
+    @Test
+    void scenarioNamesDoNotDependOnTheDefaultLocale() {
+        Locale format = Locale.getDefault(Locale.Category.FORMAT);
+        Locale.setDefault(Locale.Category.FORMAT, Locale.forLanguageTag("ar-EG"));
+        try {
+            H2ChainScenario s = new H2ChainScenario();
+            assertEquals("Valve open again at 01:20 · operating policy unchanged", s.alternatives().get(0).name());
+            assertEquals("from 01:10 · operating policy unchanged", s.forecasts().get(0).name());
+        } finally {
+            Locale.setDefault(Locale.Category.FORMAT, format);
         }
     }
 

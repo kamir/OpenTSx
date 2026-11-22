@@ -5,13 +5,13 @@ import org.opentsx.twin.Origin;
 import org.opentsx.twin.Params;
 import org.opentsx.twin.Phase;
 import org.opentsx.twin.PortSpec;
+import org.opentsx.twin.SplitMix64;
 import org.opentsx.twin.StepContext;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalDouble;
-import java.util.SplittableRandom;
 
 /**
  * A4: weather at the site. Outputs the outdoor temperature and the global horizontal irradiance. A bound measurement
@@ -26,6 +26,7 @@ import java.util.SplittableRandom;
 public final class Weather extends Atom {
 
     private static final double YEAR_DAYS = 365.2425;
+    private static final double RAD_PER_DEG = Math.PI / 180;
     private static final long DAY_MICROS = 86_400_000_000L;
     private static final long CET_MICROS = 3_600_000_000L;
 
@@ -57,7 +58,7 @@ public final class Weather extends Atom {
         dailyAmpC = params.d("dailyAmpC", 5.0);
         anomalyScale = params.d("anomalyScale", 1.0);
         seed = params.i("seed", 7);
-        latRad = Math.toRadians(params.d("latitude", 50.6));
+        latRad = params.d("latitude", 50.6) * RAD_PER_DEG;
         lonDeg = params.d("longitude", 13.0);
         cloudMin = params.d("cloudMin", 0.25);
         cloudMax = params.d("cloudMax", 0.85);
@@ -151,14 +152,14 @@ public final class Weather extends Atom {
     /** Synthetic outdoor temperature at {@code tMicros}, a pure function of time and parameters. */
     public double syntheticTemperature(long tMicros) {
         double d = (tMicros + CET_MICROS) / (double) DAY_MICROS;   // days since 1970-01-01, standard time
-        double season = -Math.cos(2 * Math.PI * (d - 17.5) / YEAR_DAYS); // -1 mid-January, +1 mid-July
+        double season = -StrictMath.cos(2 * Math.PI * (d - 17.5) / YEAR_DAYS); // -1 mid-January, +1 mid-July
         double hourOfDay = (d - Math.floor(d)) * 24;
         double dailyAmp = dailyAmpC * (1 + 0.25 * season);
-        double daily = -dailyAmp / 2 * Math.cos(2 * Math.PI * (hourOfDay - 4) / 24);
+        double daily = -dailyAmp / 2 * StrictMath.cos(2 * Math.PI * (hourOfDay - 4) / 24);
         double anomaly = anomalyScale * (1.15 - 0.25 * season) * (
-                2.2 * Math.sin(2 * Math.PI * d / 5.3 + 1.0)
-                        + 1.8 * Math.sin(2 * Math.PI * d / 11.7 + 2.0)
-                        + 1.4 * Math.sin(2 * Math.PI * d / 27.1 + 3.0)
+                2.2 * StrictMath.sin(2 * Math.PI * d / 5.3 + 1.0)
+                        + 1.8 * StrictMath.sin(2 * Math.PI * d / 11.7 + 2.0)
+                        + 1.4 * StrictMath.sin(2 * Math.PI * d / 27.1 + 3.0)
                         + 1.5 * interpolatedNoise(d, 0));
         return meanC + seasonAmpC * season + daily + anomaly;
     }
@@ -166,16 +167,17 @@ public final class Weather extends Atom {
     /** Synthetic global horizontal irradiance at {@code tMicros}: clear-sky shape times a per-day cloud factor. */
     public double syntheticGhi(long tMicros) {
         double dUtc = tMicros / (double) DAY_MICROS;
-        double decl = Math.toRadians(23.44) * Math.sin(2 * Math.PI * (dUtc - 79.5) / YEAR_DAYS);
+        double decl = 23.44 * RAD_PER_DEG * StrictMath.sin(2 * Math.PI * (dUtc - 79.5) / YEAR_DAYS);
         double solarHour = (dUtc - Math.floor(dUtc)) * 24 + lonDeg / 15.0;
-        double hourAngle = Math.toRadians(15 * (solarHour - 12));
-        double sinAlt = Math.sin(latRad) * Math.sin(decl) + Math.cos(latRad) * Math.cos(decl) * Math.cos(hourAngle);
+        double hourAngle = 15 * (solarHour - 12) * RAD_PER_DEG;
+        double sinAlt = StrictMath.sin(latRad) * StrictMath.sin(decl)
+                + StrictMath.cos(latRad) * StrictMath.cos(decl) * StrictMath.cos(hourAngle);
         if (sinAlt <= 0) {
             return 0;
         }
         double day = Math.floor((tMicros + CET_MICROS) / (double) DAY_MICROS);
         double cloud = cloudMin + (cloudMax - cloudMin) * noise((long) day, 1);
-        return 1000 * Math.pow(sinAlt, 1.15) * cloud;
+        return 1000 * StrictMath.pow(sinAlt, 1.15) * cloud;
     }
 
     /** Noise in [-1, 1] per day, linearly interpolated so the temperature has no jumps at midnight. */
@@ -187,6 +189,6 @@ public final class Weather extends Atom {
 
     /** Uniform [0, 1) per (day, stream), from the seed; no state, so snapshots and repeats are exact. */
     private double noise(long day, int stream) {
-        return new SplittableRandom(seed * 1_000_003L + day * 31L + stream).nextDouble();
+        return new SplitMix64(seed * 1_000_003L + day * 31L + stream).nextDouble();
     }
 }

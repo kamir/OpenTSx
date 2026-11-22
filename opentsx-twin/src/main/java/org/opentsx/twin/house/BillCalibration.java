@@ -305,7 +305,7 @@ public final class BillCalibration {
             var local = t0.plusSeconds(3600L * h).atZone(HouseScenario.ZONE);
             Double mean = days.get(local.toLocalDate());
             v[h] = mean == null ? Double.NaN
-                    : mean - dailyAmpC / 2 * Math.cos(2 * Math.PI * (local.getHour() + 0.5 - 4) / 24);
+                    : mean - dailyAmpC / 2 * StrictMath.cos(2 * Math.PI * (local.getHour() + 0.5 - 4) / 24);
         }
         return new SeriesInputs().bind(weatherAtom + ".t_out_meas_c", Micros.of(t0), 3_600_000_000L, v, Origin.MEASURED);
     }
@@ -564,9 +564,15 @@ public final class BillCalibration {
             if (ps.isEmpty()) {
                 continue;
             }
-            double mo = ps.stream().mapToDouble(Period::observed).average().orElse(Double.NaN);
-            double sse = ps.stream().mapToDouble(x -> x.residual() * x.residual()).sum();
-            double sum = ps.stream().mapToDouble(Period::residual).sum();
+            double mo = 0;
+            double sse = 0;
+            double sum = 0;
+            for (Period x : ps) {
+                mo += x.observed();
+                sse += x.residual() * x.residual();
+                sum += x.residual();
+            }
+            mo /= ps.size();
             cv.put(q, Math.sqrt(sse / ps.size()) / mo);
             nmbe.put(q, sum / (ps.size() * mo));
         }
@@ -651,7 +657,14 @@ public final class BillCalibration {
     // ------------------------------------------------------------------------------------------------ small linear algebra
 
     private static double mean(double[] v) {
-        return v.length == 0 ? 1 : Math.max(1e-9, Arrays.stream(v).map(Math::abs).average().orElse(1));
+        if (v.length == 0) {
+            return 1;
+        }
+        double sum = 0;
+        for (double x : v) {
+            sum += Math.abs(x);
+        }
+        return Math.max(1e-9, sum / v.length);
     }
 
     private static double dot(double[] a, double[] b) {

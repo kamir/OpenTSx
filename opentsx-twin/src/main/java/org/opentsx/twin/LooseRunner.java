@@ -10,7 +10,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SplittableRandom;
 import java.util.TreeMap;
 
 /**
@@ -550,7 +549,7 @@ public final class LooseRunner {
         if (c.jitter() == 0) {
             return 0;
         }
-        return new SplittableRandom(c.seed() * 0x9E3779B97F4A7C15L + atom * 1_000_003L + i).nextInt(c.jitter() + 1);
+        return new SplitMix64(c.seed() * 0x9E3779B97F4A7C15L + atom * 1_000_003L + i).nextInt(c.jitter() + 1);
     }
 
     private static boolean anyBusyOrDown(RunSetup r, Coupling c, int[] next, long[] busyUntil, long tick, int n) {

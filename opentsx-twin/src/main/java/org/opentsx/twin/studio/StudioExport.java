@@ -1,5 +1,7 @@
 package org.opentsx.twin.studio;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.StreamWriteFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.opentsx.twin.Atom;
@@ -24,8 +26,9 @@ import java.util.Map;
 /**
  * Runs every {@link StudioScenario} (reference, alternatives, forecasts) and writes one JSON file for the Smart
  * Topics Studio ({@code docs/prototypes}). Long runs are downsampled to at most {@link #MAX_POINTS} points per series
- * (bucket means). The output is deterministic. It leaves out {@link RunResult#hash()}: the hash chains the raw double
- * bits of every value, and those differ between JVMs whose {@code Math} functions round the last bit differently.
+ * (bucket means). The output, the run hashes included, is the same on every JVM and with every default locale:
+ * doubles are written by Jackson's shortest-decimal writer, not by {@link Double#toString(double)}, whose digits
+ * differ between Java 17 and 21, and texts are formatted with {@code Locale.ROOT}.
  * <p>
  * Usage: {@code java -cp "$(bin/opentsx classpath opentsx-twin)" org.opentsx.twin.studio.StudioExport out.json}
  */
@@ -50,7 +53,8 @@ public final class StudioExport {
         for (StudioScenario s : scenarios) {
             all.add(export(s));
         }
-        new ObjectMapper().enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS)
+        JsonFactory f = JsonFactory.builder().enable(StreamWriteFeature.USE_FAST_DOUBLE_WRITER).build();
+        new ObjectMapper(f).enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS)
                 .writeValue(out.toFile(), Map.of("scenarios", all));
     }
 
@@ -149,6 +153,7 @@ public final class StudioExport {
         Map<String, Object> x = new LinkedHashMap<>();
         x.put("runId", r.runId());
         x.put("mode", r.mode().name());
+        x.put("hash", r.hash());
         Map<String, Object> series = new LinkedHashMap<>();
         Map<String, Object> origin = new LinkedHashMap<>();
         for (String k : keys) {
@@ -196,7 +201,7 @@ public final class StudioExport {
         if (Double.isNaN(v) || Double.isInfinite(v)) {
             return null;
         }
-        double f = Math.pow(10, digits);
+        double f = StrictMath.pow(10, digits);
         return Math.round(v * f) / f;
     }
 }

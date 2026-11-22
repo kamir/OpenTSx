@@ -1,5 +1,6 @@
 package org.opentsx.twin.demo;
 
+import com.fasterxml.jackson.core.io.NumberOutput;
 import org.opentsx.model.Micros;
 import org.opentsx.twin.Intervention;
 import org.opentsx.twin.Mode;
@@ -406,8 +407,8 @@ public final class BoatDemo {
         return new Alternative(name, label, List.of(ivs), Map.of(), inputs);
     }
 
-    private static Intervention set(Instant t, String atom, String control, double v) {
-        return Intervention.set(t, atom, control, v, "what-if", control + "=" + v);
+    static Intervention set(Instant t, String atom, String control, double v) {
+        return Intervention.set(t, atom, control, v, "what-if", control + "=" + NumberOutput.toString(v, true));
     }
 
     private static String arg(String[] args, int i) {
