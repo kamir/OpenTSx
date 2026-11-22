@@ -14,8 +14,8 @@ entries before 3.0.0 are grouped by date.
 
 - The `doc` of the Avro envelopes `PortMessage`, `Barrier` and `Intervention` (`opentsx-twin`, `twin/avro/`) names
   no topic, and the `opentsx-twin-live` docs no longer list `.msgs`, `.barrier` and `.interventions` next to the event
-  topic: no code writes these records to a topic. `twin.<id>.<run>.events` is the only topic a twin run writes; an
-  applied intervention appears there only as an event of type `intervention`. Fields and the wire format are
+  topic: no code writes these records to a topic. The event topic is the only topic a twin run writes; an applied
+  intervention appears there only as an event of type `intervention`. Fields and the wire format are
   unchanged. `AtomSchemasTest` and `EventTopicLiveTest` fail when these docs name a topic that no code writes. The
   example event in the twin-live README and in `EventTopic` is the record the h2-chain reference run writes. The
   `opentsx-twin` docs call the envelopes the message contract, as TWIN-COUPLING-SPEC section 7 does, and the
@@ -41,6 +41,26 @@ entries before 3.0.0 are grouped by date.
   that `DAG_RUN_ROLE=user` (`SAAS_DAG_RUN_ROLE` in k3s) also opens demo generators and Wayang runs to every account.
   With `DAG_RUN_ROLE=user` the SaaS backend prints at startup that every signed-in account may deploy and stop DAGs,
   run demo generators and run Wayang deployments, and that sign-up is open.
+- **Breaking for operators.** `opentsx-twin-live` names the event topic of a twin run through `TopicLayout`:
+  `TopicLayout.twinEvents(twin, run)` gives `tsx.<domain>.twin.<twin>.<run>.events.v1`, for example
+  `tsx.wind.twin.h2-chain.h2-chain-6734f91571b28b83.events.v1`. Two deployments with different domains on one shared
+  broker write different topics. `twin-live publish`, `bridge` and `demo` take `--domain` (default `wind`, as
+  the other tools). The bridge serves only event topics of its domain (`TopicLayout.isTwinEvents`) and answers 400
+  for every other name. The k3s component `event-bridge` passes `--domain $(OPENTSX_DOMAIN)`. The Smart Topics Studio
+  has a field "Domain" in the view Event topic, takes `?domain=` and builds the name of `TopicLayout.twinEvents`.
+  Twin and run ids in the name must match `[a-z0-9][a-z0-9-]*`. `EventTopic.name` and `EventTopic.isEventTopic` are
+  removed; `EventPublisher` and `EventBridge` take a `TopicLayout`. `TopicLayoutTwinEventsTest` and
+  `EventTopicLiveTest` pin the name, and `tools/test_twin_topic_names.py` fails when code other than `TopicLayout`
+  and the Studio builds a twin event topic name. CLAUDE.md states the topic rule as `tsx.<domain>.<kind>.v<n>`, with
+  `.v2` for Avro and `.v1` for JSON records.
+  Migration: `twin.<twin>.<run>.events` is no longer written, and the bridge no longer serves it. Topics with that
+  name stay on the broker; delete them only on a broker where you created them. The new name keeps the twin id and
+  the run id: `twin.<twin>.<run>.events` becomes `tsx.<domain>.twin.<twin>.<run>.events.v1`, where `<domain>` is the
+  `--domain` of the publisher (`wind` without it, `OPENTSX_DOMAIN` on k3s).
+  `bin/opentsx twin-live demo --domain <domain>` prints the topic of every scenario without a broker. Start the
+  bridge with the publisher's domain, open the Studio with `?domain=<domain>`, and point every consumer that reads
+  the topic by name at the new name. See
+  [Move consumers to the domain topic](opentsx-twin-live/README.md#move-consumers-to-the-domain-topic).
 
 - TASK-020 U01 decisions D-T16 to D-T22 (owner, 2026-11-21). `TsxCompileContext.Boundary` loses `admitsRaw` (D-T22):
   no raw series, pair or vector and no operator with merge class `none` can feed a federated sink. Spec S1.10, S2.2

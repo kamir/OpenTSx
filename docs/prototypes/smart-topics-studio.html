@@ -466,6 +466,9 @@ dialog.drawer::backdrop { background: rgba(10, 8, 59, 0.35); }
           <label class="ctl inline" for="tp-url">Bridge address
             <input type="text" id="tp-url" style="width:24ch" spellcheck="false" autocomplete="off">
           </label>
+          <label class="ctl inline" for="tp-domain">Domain
+            <input type="text" id="tp-domain" style="width:12ch" spellcheck="false" autocomplete="off">
+          </label>
           <label class="ctl inline" for="tp-from">Read
             <select id="tp-from"><option value="earliest">from the start</option><option value="latest">from now</option></select>
           </label>
@@ -473,7 +476,7 @@ dialog.drawer::backdrop { background: rgba(10, 8, 59, 0.35); }
           <span class="chip org" id="tp-state">not connected</span>
         </div>
         <p class="note" id="tp-hint" role="status"></p>
-        <p class="note">The bridge reads the topic from KafScale and passes it on to the browser. Start it with <span class="mono">bin/opentsx twin-live bridge --bootstrap host:9092</span>. <span class="mono">bin/opentsx twin-live publish --bootstrap host:9092 --duration 120</span> writes the events into the topic. Without a broker, <span class="mono">bin/opentsx twin-live demo</span> starts both with topics kept in memory.</p>
+        <p class="note">The bridge reads the topic from KafScale and passes it on to the browser. Start it with <span class="mono">bin/opentsx twin-live bridge --bootstrap host:9092</span>. <span class="mono">bin/opentsx twin-live publish --bootstrap host:9092 --duration 120</span> writes the events into the topic. Without a broker, <span class="mono">bin/opentsx twin-live demo</span> starts both with topics kept in memory. The domain is the one given to the bridge and the publisher with <span class="mono">--domain</span> (default <span class="mono">wind</span>); the bridge serves only the topics of its domain.</p>
       </div>
       <div class="sec" id="tp-replay">
         <div class="btnrow">
@@ -1167,11 +1170,12 @@ $("tech").addEventListener("click", () => setTech(!document.documentElement.data
 let tech0 = false; try { tech0 = localStorage.getItem("opentsx.studio.tech") === "1"; } catch (e) {}
 setTech(tech0);
 
-// event topic: records of twin.<id>.<run>.events, either live through the bridge (server-sent events) or as a replay
-// of the reference run in the browser
+// event topic: records of tsx.<domain>.twin.<twin>.<run>.events.v1 (TopicLayout.twinEvents), either live through the
+// bridge (server-sent events) or as a replay of the reference run in the browser
 const tp = { mode: "replay", pos: 0, timer: null, shown: -1, es: null, state: "idle", rows: [] };
 const tpTotal = () => N * SC.stepMinutes;
-const tpTopic = () => `twin.${SC.plan.twin}.${SC.reference.runId}.events`;
+const tpDomain = () => $("tp-domain").value.trim();
+const tpTopic = () => `tsx.${tpDomain()}.twin.${SC.plan.twin}.${SC.reference.runId}.events.v1`;
 function tpStop() { if (!tp.timer) return; clearInterval(tp.timer); tp.timer = null; renderTopic(); }
 function tpDisconnect() { if (tp.es) tp.es.close(); tp.es = null; tp.state = "idle"; }
 function tpReset() { clearInterval(tp.timer); tp.timer = null; tp.pos = 0; tp.shown = -1; tpDisconnect(); tp.rows = []; }
@@ -1185,7 +1189,8 @@ function tpPlay() {
 function tpConnect() {
   tpDisconnect(); tp.rows = []; tp.shown = -1; $("tp-hint").textContent = "";
   let base; try { base = new URL($("tp-url").value.trim()); if (!/^https?:$/.test(base.protocol)) throw 0; } catch (e) { $("tp-hint").textContent = "The address must start with http:// or https://."; renderTopic(true); return; }
-  try { localStorage.setItem("opentsx.studio.bridge", base.href); } catch (e) {}
+  if (!/^[a-z0-9][a-z0-9_-]*$/.test(tpDomain())) { $("tp-hint").textContent = "The domain must start with a lower-case letter or digit and contain only lower-case letters, digits, hyphens and underscores."; renderTopic(true); return; }
+  try { localStorage.setItem("opentsx.studio.bridge", base.href); localStorage.setItem("opentsx.studio.domain", tpDomain()); } catch (e) {}
   const es = tp.es = new EventSource(base.href.replace(/\/+$/, "") + "/v1/topics/" + encodeURIComponent(tpTopic()) + "/events?from=" + $("tp-from").value);
   tp.state = "connecting";
   es.onopen = () => { if (tp.es !== es) return; tp.state = "open"; $("tp-hint").textContent = ""; renderTopic(true); };
@@ -1196,7 +1201,7 @@ function tpConnect() {
     if (tp.rows.length > 500) tp.rows.shift();
     renderTopic(); };
   es.onerror = () => { if (tp.es !== es) return;
-    if (es.readyState === 2) { tp.es = null; tp.state = "failed"; $("tp-hint").textContent = "No connection. Is the bridge running at this address, and has anything been written to this topic yet?"; }
+    if (es.readyState === 2) { tp.es = null; tp.state = "failed"; $("tp-hint").textContent = "No connection. Is the bridge running at this address with this domain, and has anything been written to this topic yet?"; }
     else { tp.state = "connecting"; $("tp-hint").textContent = "The bridge does not answer; the browser keeps trying."; }
     renderTopic(true); };
   renderTopic(true);
@@ -1236,10 +1241,15 @@ $("tp-play").addEventListener("click", () => tp.timer ? tpStop() : tpPlay());
 $("tp-reset").addEventListener("click", () => { clearInterval(tp.timer); tp.timer = null; tp.pos = 0; tp.shown = -1; renderTopic(true); });
 $("tp-src-live").addEventListener("click", () => tpMode("live")); $("tp-src-replay").addEventListener("click", () => tpMode("replay"));
 $("tp-connect").addEventListener("click", () => { if (tp.es) { tpDisconnect(); renderTopic(true); } else tpConnect(); });
+$("tp-domain").addEventListener("input", () => { tpDisconnect(); tp.rows = []; tp.shown = -1; renderTopic(true); });
 // default address of the bridge: next to a local page the local bridge, otherwise the node port of the k3s component
 let bridge0 = /^(localhost|127\.|\[::1\]|$)/.test(location.hostname) ? "http://localhost:8090" : `http://${location.hostname}:30312`;
 try { bridge0 = new URLSearchParams(location.search).get("bridge") || localStorage.getItem("opentsx.studio.bridge") || bridge0; } catch (e) {}
 $("tp-url").value = bridge0;
+// default domain: the default of the twin-live command line
+let domain0 = "wind";
+try { domain0 = new URLSearchParams(location.search).get("domain") || localStorage.getItem("opentsx.studio.domain") || domain0; } catch (e) {}
+$("tp-domain").value = domain0;
 if (new URLSearchParams(location.search).get("bridge")) tp.mode = "live";
 
 // rail: icons only or with labels; the diagram is measured again once the width has settled

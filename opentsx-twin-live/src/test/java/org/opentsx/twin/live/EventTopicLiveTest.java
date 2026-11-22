@@ -2,6 +2,7 @@ package org.opentsx.twin.live;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
+import org.opentsx.kafka.TopicLayout;
 import org.opentsx.twin.RunResult;
 import org.opentsx.twin.TwinEvent;
 import org.opentsx.twin.studio.Scenarios;
@@ -29,33 +30,48 @@ import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class EventTopicLiveTest {
 
+    private static final TopicLayout DEMO = new TopicLayout("demo");
+
     private static StudioScenario h2() {
         return Scenarios.all().stream().filter(s -> s.id().equals("h2-chain")).findFirst().orElseThrow();
     }
 
     @Test
-    void topicNameFollowsTheTwinContractAndIsStable() {
+    void topicNameComesFromTheDomainLayoutAndIsStable() throws Exception {
         StudioScenario s = h2();
         RunResult a = EventPublisher.referenceRun(s), b = EventPublisher.referenceRun(s);
         assertEquals(a.runId(), b.runId(), "the Studio page and the publisher must arrive at the same topic");
-        String topic = EventTopic.name(s.plan().twin(), a.runId());
-        assertEquals("twin.h2-chain." + a.runId() + ".events", topic);
-        assertTrue(EventTopic.isEventTopic(topic));
-        assertFalse(EventTopic.isEventTopic("tsx.windpark.episodes.v2"));
-        assertFalse(EventTopic.isEventTopic("twin.h2-chain.run.msgs"));
-        assertFalse(EventTopic.isEventTopic("twin.h2-chain.../x.events"));
+        String topic = new EventPublisher(new MemoryTopics(), DEMO).publish(s.plan(), a, null);
+        assertEquals("tsx.demo.twin.h2-chain." + a.runId() + ".events.v1", topic);
+        assertEquals(DEMO.twinEvents(s.plan().twin(), a.runId()), topic);
+        assertNotEquals(topic, new EventPublisher(new MemoryTopics(), new TopicLayout("other")).publish(s.plan(), a, null));
+    }
+
+    /** The Studio is a static page and builds the name in the browser; it must build the name of the layout. */
+    @Test
+    void studioBuildsTheTopicNameOfTheLayout() throws IOException {
+        String template = Files.readString(Path.of("..", "docs", "prototypes", "smart-topics-studio.template.html"));
+        Matcher m = Pattern.compile("const tpTopic = \\(\\) => `([^`]*)`;").matcher(template);
+        assertTrue(m.find(), "the Studio template defines no tpTopic");
+        String built = m.group(1).replace("${tpDomain()}", "demo").replace("${SC.plan.twin}", "h2-chain")
+                .replace("${SC.reference.runId}", "h2-chain-6734f91571b28b83");
+        assertEquals(DEMO.twinEvents("h2-chain", "h2-chain-6734f91571b28b83"), built);
     }
 
     /** The event topic is the only twin topic that code writes, so the docs of this module name no other. */
     @Test
     void docsNameOnlyTheEventTopic() throws IOException {
-        Pattern kind = Pattern.compile("twin\\.<id>\\.<run>\\.([a-z]+)|(?:`|\\{@code )\\.([a-z]+)[`}]");
+        Pattern kind = Pattern.compile("twin\\.<(?:id|twin)>\\.<run>\\.([a-z]+)|(?:`|\\{@code )\\.([a-z]+)[`}]");
+        for (String name : List.of("twin.<id>.<run>.msgs", "tsx.<domain>.twin.<twin>.<run>.msgs.v1")) {
+            assertTrue(kind.matcher(name).find(), "the check misses " + name);
+        }
         for (String doc : List.of("README.md", "src/main/java/org/opentsx/twin/live/EventTopic.java")) {
             Set<String> kinds = new TreeSet<>();
             Matcher m = kind.matcher(Files.readString(Path.of(doc)));
@@ -71,7 +87,7 @@ class EventTopicLiveTest {
         StudioScenario s = h2();
         RunResult run = EventPublisher.referenceRun(s);
         MemoryTopics topics = new MemoryTopics();
-        String topic = new EventPublisher(topics).publish(s.plan(), run, null);
+        String topic = new EventPublisher(topics, DEMO).publish(s.plan(), run, null);
 
         List<Topics.Rec> recs = topics.open(topic, Topics.EARLIEST).poll(Duration.ofMillis(10));
         assertEquals(run.events().size(), recs.size());
@@ -99,7 +115,7 @@ class EventTopicLiveTest {
         StudioScenario s = h2();
         RunResult run = EventPublisher.referenceRun(s);
         MemoryTopics topics = new MemoryTopics();
-        String topic = new EventPublisher(topics).publish(s.plan(), run, null);
+        String topic = new EventPublisher(topics, DEMO).publish(s.plan(), run, null);
 
         int interventions = 0;
         for (Topics.Rec r : topics.open(topic, Topics.EARLIEST).poll(Duration.ofMillis(10))) {
@@ -120,7 +136,7 @@ class EventTopicLiveTest {
         StudioScenario s = h2();
         RunResult run = EventPublisher.referenceRun(s);
         List<Long> sleeps = new ArrayList<>();
-        new EventPublisher(new MemoryTopics(), sleeps::add).publish(s.plan(), run, Duration.ofSeconds(360));
+        new EventPublisher(new MemoryTopics(), DEMO, sleeps::add).publish(s.plan(), run, Duration.ofSeconds(360));
         // six hours in 360 s: one second per minute; the valve closes at 01:00, so the first wait is 60 s
         assertEquals(60_000, sleeps.get(0), 1_000);
         assertEquals(360_000, sleeps.stream().mapToLong(Long::longValue).sum());
@@ -129,10 +145,10 @@ class EventTopicLiveTest {
     @Test
     void bridgeStreamsATopicFromTheStartAndThenLive() throws Exception {
         MemoryTopics topics = new MemoryTopics();
-        String topic = "twin.demo.run-1.events";
+        String topic = DEMO.twinEvents("demo", "run-1");
         topics.append(topic, "line", "{\"type\":\"a\"}".getBytes(StandardCharsets.UTF_8), EventTopic.SCHEMA);
         topics.append(topic, "ely", "{\"type\":\"b\"}".getBytes(StandardCharsets.UTF_8), EventTopic.SCHEMA);
-        try (EventBridge bridge = new EventBridge(topics, 0, "*", 4)) {
+        try (EventBridge bridge = new EventBridge(topics, DEMO, 0, "*", 4)) {
             BlockingQueue<JsonNode> got = new LinkedBlockingQueue<>();
             Thread reader = follow(bridge, topic, "from=earliest", null, got);
 
@@ -167,12 +183,12 @@ class EventTopicLiveTest {
         StudioScenario s = h2();
         RunResult run = EventPublisher.referenceRun(s);
         MemoryTopics topics = new MemoryTopics();
-        String topic = EventTopic.name(s.plan().twin(), run.runId());
+        String topic = DEMO.twinEvents(s.plan().twin(), run.runId());
         java.util.concurrent.CountDownLatch waiting = new java.util.concurrent.CountDownLatch(1);
         java.util.concurrent.CountDownLatch go = new java.util.concurrent.CountDownLatch(1);
         Thread publisher = new Thread(() -> {
             try {
-                new EventPublisher(topics, ms -> {
+                new EventPublisher(topics, DEMO, ms -> {
                     waiting.countDown();
                     go.await();
                 }).publish(s.plan(), run, Duration.ofSeconds(60));
@@ -184,7 +200,7 @@ class EventTopicLiveTest {
         publisher.start();
         assertTrue(waiting.await(5, TimeUnit.SECONDS));
         assertEquals(0, topics.size(topic));
-        try (EventBridge bridge = new EventBridge(topics, 0, "*", 4)) {
+        try (EventBridge bridge = new EventBridge(topics, DEMO, 0, "*", 4)) {
             BlockingQueue<JsonNode> got = new LinkedBlockingQueue<>();
             Thread reader = follow(bridge, topic, "from=earliest", null, got);
             assertNull(got.poll(500, TimeUnit.MILLISECONDS), "connected, nothing published yet");
@@ -195,15 +211,20 @@ class EventTopicLiveTest {
     }
 
     @Test
-    void bridgeServesOnlyEventTopicsOfTwins() throws Exception {
+    void bridgeServesOnlyEventTopicsOfTwinsInItsDomain() throws Exception {
         MemoryTopics topics = new MemoryTopics();
         topics.append("tsx.windpark.episodes.v2", "k", new byte[] {1}, "x");
-        try (EventBridge bridge = new EventBridge(topics, 0, "https://studio.example", 4)) {
+        for (String topic : List.of("twin.demo.run-1.events", new TopicLayout("other").twinEvents("demo", "run-1"))) {
+            topics.append(topic, "line", "{\"type\":\"a\"}".getBytes(StandardCharsets.UTF_8), EventTopic.SCHEMA);
+        }
+        try (EventBridge bridge = new EventBridge(topics, DEMO, 0, "https://studio.example", 4)) {
             HttpClient http = HttpClient.newHttpClient();
             String base = "http://localhost:" + bridge.port();
             assertEquals(400, status(http, base + "/v1/topics/tsx.windpark.episodes.v2/events"));
-            assertEquals(404, status(http, base + "/v1/topics/twin.none.run-1.events/events"));
-            assertEquals(400, status(http, base + "/v1/topics/twin.demo.run-1.events/events?from=yesterday"));
+            assertEquals(400, status(http, base + "/v1/topics/twin.demo.run-1.events/events"));
+            assertEquals(400, status(http, base + "/v1/topics/tsx.other.twin.demo.run-1.events.v1/events"));
+            assertEquals(404, status(http, base + "/v1/topics/" + DEMO.twinEvents("none", "run-1") + "/events"));
+            assertEquals(400, status(http, base + "/v1/topics/" + DEMO.twinEvents("demo", "run-1") + "/events?from=yesterday"));
             HttpResponse<String> health = http.send(HttpRequest.newBuilder(URI.create(base + "/v1/health")).build(),
                     HttpResponse.BodyHandlers.ofString());
             assertEquals(200, health.statusCode());

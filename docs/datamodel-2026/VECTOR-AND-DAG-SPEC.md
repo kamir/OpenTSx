@@ -224,7 +224,7 @@ A vector topic holds one `opentsx.vector.v1` JSON record per measuring point. JS
 * The processor does not check component names against the pattern. `params.names` of a document MUST follow it.
 
 Implemented in: `vector/VectorJson.java:28-66`, `workbench/vector.ts:295-339`,
-`kafka/TopicLayout.java:27,107-116,183-200`, `vector/VectorProcessor.java:385-391`,
+`kafka/TopicLayout.java:27,107-116,206-225`, `vector/VectorProcessor.java:385-391`,
 `vector/VectorProcessorApp.java:85-89`, `vector-tests/VectorJobTest.java:157-165`.
 
 ### 2.4 Read vectors back as series

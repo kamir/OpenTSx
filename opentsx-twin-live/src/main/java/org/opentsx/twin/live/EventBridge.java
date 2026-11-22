@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import org.opentsx.kafka.TopicLayout;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -26,8 +27,8 @@ import java.util.concurrent.Semaphore;
  * </pre>
  * A message carries the offset as its id and {@code {"topic","offset","timestamp","key","value"}} as data, where
  * {@code value} is the JSON of the record. A browser that reconnects sends {@code Last-Event-ID}; the stream then
- * continues behind that offset. Only event topics of twins ({@link EventTopic#isEventTopic}) are served, read-only.
- * Every stream holds one reader on the log, so their number is limited.
+ * continues behind that offset. Only event topics of twin runs of the domain ({@link TopicLayout#isTwinEvents}) are
+ * served, read-only. Every stream holds one reader on the log, so their number is limited.
  */
 public final class EventBridge implements AutoCloseable {
 
@@ -35,13 +36,15 @@ public final class EventBridge implements AutoCloseable {
     private static final long KEEPALIVE_MS = 15_000;
 
     private final Topics topics;
+    private final TopicLayout layout;
     private final HttpServer http;
     private final String allowOrigin;
     private final Semaphore streams;
     private volatile boolean closed;
 
-    public EventBridge(Topics topics, int port, String allowOrigin, int maxStreams) throws IOException {
+    public EventBridge(Topics topics, TopicLayout layout, int port, String allowOrigin, int maxStreams) throws IOException {
         this.topics = topics;
+        this.layout = layout;
         this.allowOrigin = allowOrigin;
         this.streams = new Semaphore(maxStreams);
         this.http = HttpServer.create(new InetSocketAddress(port), 0);
@@ -75,8 +78,8 @@ public final class EventBridge implements AutoCloseable {
                 json(ex, 200, EventTopic.JSON.createObjectNode().put("status", "ok"));
             } else if (path.startsWith("/v1/topics/") && path.endsWith("/events")) {
                 String topic = path.substring("/v1/topics/".length(), path.length() - "/events".length());
-                if (!EventTopic.isEventTopic(topic)) {
-                    error(ex, 400, "not an event topic of a twin: " + topic);
+                if (!layout.isTwinEvents(topic)) {
+                    error(ex, 400, "not an event topic of a twin in domain " + layout.domain() + ": " + topic);
                 } else {
                     stream(ex, topic);
                 }

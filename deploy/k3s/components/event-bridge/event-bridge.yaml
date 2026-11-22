@@ -24,11 +24,14 @@ spec:
           image: opentsx/tools
           imagePullPolicy: IfNotPresent
           # broker and allowed origin come from the environment (KAFSCALE_BOOTSTRAP, EVENT_BRIDGE_ALLOW_ORIGIN)
-          args: [twin-live, bridge, --port, "8090"]
+          args: [twin-live, bridge, --port, "8090", --domain, $(OPENTSX_DOMAIN)]
           env:
             - name: KAFSCALE_BOOTSTRAP
               valueFrom:
                 configMapKeyRef: {name: opentsx-config, key: KAFSCALE_BOOTSTRAP}
+            - name: OPENTSX_DOMAIN
+              valueFrom:
+                configMapKeyRef: {name: opentsx-config, key: OPENTSX_DOMAIN}
             - name: EVENT_BRIDGE_ALLOW_ORIGIN
               valueFrom:
                 configMapKeyRef: {name: opentsx-config, key: EVENT_BRIDGE_ALLOW_ORIGIN, optional: true}
