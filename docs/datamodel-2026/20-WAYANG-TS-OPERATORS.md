@@ -250,7 +250,7 @@ Materialize is BSL 1.1; Bytewax is community-maintained after its company stoppe
 |---|---|---|
 | C1 | One operator catalog: ids and versions of `opentsx.processor.v1`. The schema gets runtime keys `wayang` (Track A) and `rust` (Track B), a `state` and a `merge` field (S1). | The workbench already writes these ids (`opentsx-saas-frontend/src/workbench/ops.ts:834-930`). |
 | C2 | An operator version enters a track only when it passes the shared vectors that the reference implementation passes. | Rule of [Vector and DAG rules](VECTOR-AND-DAG-SPEC.md#5-streaming-contract), section 5, row "Equality of preview and operation". |
-| C3 | Topic names from `TopicLayout` (`tsx.<domain>.<kind>.v2`), records in Avro single-object encoding, key `seriesId`, Java-compatible murmur2 partitioning. | `TopicLayout.java:204-206`; `BucketWriter.java:119-120`. |
+| C3 | Topic names from `TopicLayout` (`tsx.<domain>.<kind>.v2`), records in Avro single-object encoding, key `seriesId`, Java-compatible murmur2 partitioning. | `TopicLayout.java:227-229`; `BucketWriter.java:119-120`. |
 | C4 | Clients connect to the KafScale proxy only, with `enable.idempotence=false`, `acks=all`, one request in flight. | `KafScaleClients.java:36-50`. |
 | C5 | At-least-once delivery, deterministic output ids, readers keep one record per id. | Section 3.4. |
 | C6 | Checkpoint per task with offsets and operator state, written after all output before it is acknowledged. | `VectorProcessor.java:56-59`. |

@@ -93,18 +93,22 @@ reads Iceberg.
 ## Event bridge: twin event topics for the browser
 
 `20-configure.sh EVENT_BRIDGE=true` adds the component `event-bridge`: Deployment and Service `opentsx-event-bridge`
-(image `opentsx/tools`, `opentsx twin-live bridge`), NodePort 30312. It reads the topics `twin.<id>.<run>.events`
-from the configured KafScale and serves them as server-sent events:
+(image `opentsx/tools`, `opentsx twin-live bridge --domain $(OPENTSX_DOMAIN)`), NodePort 30312. It reads the event
+topics of twin runs in the domain `OPENTSX_DOMAIN`, `tsx.<domain>.twin.<twin>.<run>.events.v1`, from the configured
+KafScale and serves them as server-sent events:
 
 ```
 curl http://<node>:30312/v1/health
 curl -N "http://<node>:30312/v1/topics/<topic>/events?from=earliest"
 ```
 
-The Smart Topics Studio follows a topic through it: open the page with `?bridge=http://<node>:30312`, tab
-"Event topic", "Connect". Events get into the topics with `opentsx twin-live publish` (see
-`opentsx-twin-live/README.md`). The bridge is read-only, serves only event topics of twins and has no authentication;
-`EVENT_BRIDGE_ALLOW_ORIGIN` narrows the origin it answers browsers from.
+The Smart Topics Studio follows a topic through it: open the page with
+`?bridge=http://<node>:30312&domain=<domain>`, tab "Event topic", "Connect". Events get into the topics with
+`opentsx twin-live publish --domain <domain>` (see `opentsx-twin-live/README.md`). `<domain>` is `OPENTSX_DOMAIN`.
+The bridge is read-only, serves only event topics of twin runs in its domain and has no authentication;
+`EVENT_BRIDGE_ALLOW_ORIGIN` narrows the origin it answers browsers from. It answers 400 for every other topic name,
+also for `twin.<twin>.<run>.events`; see
+[Move consumers to the domain topic](../../opentsx-twin-live/README.md#move-consumers-to-the-domain-topic).
 
 ## SaaS module: web workbench, accounts, stored flows
 

@@ -23,6 +23,11 @@ value = Avro single-object encoding.
 `[a-z0-9][a-z0-9-]*`; each new topic name is limited to 249 bytes. `all()` and `provision(...)`
 use the five topics listed above. Create additional topics explicitly with `provisionTopic(...)`.
 
+`twinEvents(twin, run)` names `tsx.<domain>.twin.<twin>.<run>.events.v1`, the event topic of one twin run (JSON
+`twin.event.v1`, written by [`opentsx-twin-live`](../opentsx-twin-live/README.md#topic-contract)). Twin and run ids
+must match `[a-z0-9][a-z0-9-]*`, and the name is limited to 249 bytes. `isTwinEvents(topic)` accepts only such a
+topic of the layout's domain.
+
 ## Write a bucket
 
 ```java

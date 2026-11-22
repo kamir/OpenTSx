@@ -180,6 +180,29 @@ public final class TopicLayout {
         return topic("features");
     }
 
+    /**
+     * Event topic of one twin run: {@code tsx.<domain>.twin.<twin>.<run>.events.v1}, records {@code twin.event.v1}
+     * (JSON), key = atom, one partition. Written by opentsx-twin-live.
+     */
+    public String twinEvents(String twin, String runId) {
+        if (twin == null || runId == null || !SMART_NAME.matcher(twin).matches() || !SMART_NAME.matcher(runId).matches()) {
+            throw new IllegalArgumentException("twin and run ids must match " + SMART_NAME + ": " + twin + ", " + runId);
+        }
+        return boundedTopic("tsx." + domain + ".twin." + twin + "." + runId + ".events.v1");
+    }
+
+    /** Whether {@code topic} is the event topic of a twin run of this domain. */
+    public boolean isTwinEvents(String topic) {
+        String prefix = "tsx." + domain + ".twin.";
+        String suffix = ".events.v1";
+        if (topic == null || topic.length() > 249 || !topic.startsWith(prefix) || !topic.endsWith(suffix)
+                || topic.length() <= prefix.length() + suffix.length()) {
+            return false;
+        }
+        String[] ids = topic.substring(prefix.length(), topic.length() - suffix.length()).split("\\.", -1);
+        return ids.length == 2 && SMART_NAME.matcher(ids[0]).matches() && SMART_NAME.matcher(ids[1]).matches();
+    }
+
     /** Creates the vector topic when it is missing: one partition, so a scan reads the measuring points in order. */
     public void provisionSmartVectors(Admin admin, String name, short replicationFactor) {
         provisionTopic(admin, smartVectors(name), replicationFactor);

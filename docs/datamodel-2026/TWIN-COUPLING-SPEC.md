@@ -8,6 +8,14 @@ appear in capitals.
 
 Module: [`opentsx-twin`](../../opentsx-twin/README.md). Paths in "Implemented in" lines are relative to
 `opentsx-twin/src/main/java/org/opentsx/twin/`; test paths are relative to `opentsx-twin/src/test/java/org/opentsx/twin/`.
+Paths in other modules start with a short path that stands for one of these folders:
+
+| Short path | Folder |
+|---|---|
+| `live/` | `opentsx-twin-live/src/main/java/org/opentsx/twin/live/` |
+| `live-tests/` | `opentsx-twin-live/src/test/java/org/opentsx/twin/live/` |
+| `kafka/` | `opentsx-kafka-v2/src/main/java/org/opentsx/kafka/` |
+| `kafka-tests/` | `opentsx-kafka-v2/src/test/java/org/opentsx/kafka/` |
 
 Terms:
 
@@ -307,13 +315,15 @@ The message id is `<runId>/<k>/<phase>/<atom>/<port>`.
   `org.opentsx.twin.v1`. The schemas name no topic.
 * `opentsx-twin` ships the in-memory `MessageLog` as the only sink. It has no KafScale binding for port messages and
   barriers. No topic carries port messages or barriers, and no topic carries the `Intervention` record. An applied
-  intervention reaches the event topic of `opentsx-twin-live` only as an event of type `intervention` (§4).
+  intervention reaches the event topic of `opentsx-twin-live` (`TopicLayout.twinEvents(twin, run)`,
+  `tsx.<domain>.twin.<twin>.<run>.events.v1`) only as an event of type `intervention` (§4).
 
 Implemented in: `PortMessage.java:8-13`, `Barrier.java:7-11`, `MessageSink.java:4-18`, `MessageLog.java:8-29`,
-`TwinRunner.java:107-113,140-146,158`, `LooseRunner.java:319-322,374`, `schema/AtomSchemas.java:35,60-100`,
-`RunSetup.java:134-136`, `EventPublisher.java:51,53,66`; tests: `TwinShadowTest.java:103-131`,
-`LooseRunnerTest.java:41-45,70-106,224-233,274-277`, `schema/AtomSchemasTest.java:90-95`,
-`EventTopicLiveTest.java:98-116`.
+`TwinRunner.java:107-113,140-146,158`, `LooseRunner.java:320-323,375`, `schema/AtomSchemas.java:35,60-100`,
+`RunSetup.java:134-136`, `live/EventPublisher.java:55,57,70`, `kafka/TopicLayout.java:183-192`; tests:
+`TwinShadowTest.java:103-131`, `LooseRunnerTest.java:41-45,70-106,224-233,274-277`,
+`schema/AtomSchemasTest.java:90-95`, `live-tests/EventTopicLiveTest.java:114-132`,
+`kafka-tests/TopicLayoutTwinEventsTest.java:14-23`.
 
 <a id="8-run-identity-and-run-record"></a>
 
@@ -568,7 +578,7 @@ jitter, the lag of one atom, the step ticks of one atom or the outages of one at
 than a superstep of `h2-chain` or `haus` under lag 2 and jitter 3 alone, so the slow processor of the combined
 transport still costs ticks.
 
-Implemented in: `LooseRunner.java:142-157,160-163,278-286,323-326,409-430`, `studio/StudioExport.java:107-111`;
+Implemented in: `LooseRunner.java:143-158,161-164,279-287,324-327,410-431`, `studio/StudioExport.java:103-107`;
 tests: `LooseRunnerTest.java:28-143,224-277`.
 
 <a id="113-throughput"></a>

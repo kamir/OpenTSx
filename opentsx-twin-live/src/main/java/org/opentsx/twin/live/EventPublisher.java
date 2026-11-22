@@ -1,5 +1,6 @@
 package org.opentsx.twin.live;
 
+import org.opentsx.kafka.TopicLayout;
 import org.opentsx.twin.Mode;
 import org.opentsx.twin.RunResult;
 import org.opentsx.twin.TwinEvent;
@@ -13,10 +14,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Writes the events of a twin run to its event topic, in the order of the run. With a duration the run is played in
- * that time: every event is published when its moment in the (compressed) run has come, so that a reader of the
- * topic sees the run unfold. Without one, all events are published at once. The topic is created before the first
- * event, so a reader can open it while the run has not reported anything yet.
+ * Writes the events of a twin run to its event topic ({@link TopicLayout#twinEvents} of the domain), in the order of
+ * the run. With a duration the run is played in that time: every event is published when its moment in the
+ * (compressed) run has come, so that a reader of the topic sees the run unfold. Without one, all events are published
+ * at once. The topic is created before the first event, so a reader can open it while the run has not reported
+ * anything yet.
  */
 public final class EventPublisher {
 
@@ -26,14 +28,16 @@ public final class EventPublisher {
     }
 
     private final Topics topics;
+    private final TopicLayout layout;
     private final Sleeper sleeper;
 
-    public EventPublisher(Topics topics) {
-        this(topics, Thread::sleep);
+    public EventPublisher(Topics topics, TopicLayout layout) {
+        this(topics, layout, Thread::sleep);
     }
 
-    public EventPublisher(Topics topics, Sleeper sleeper) {
+    public EventPublisher(Topics topics, TopicLayout layout, Sleeper sleeper) {
         this.topics = topics;
+        this.layout = layout;
         this.sleeper = sleeper;
     }
 
@@ -48,7 +52,7 @@ public final class EventPublisher {
      * {@code null} for all at once. Returns the topic.
      */
     public String publish(TwinPlan plan, RunResult run, Duration duration) throws InterruptedException {
-        String topic = EventTopic.name(plan.twin(), run.runId());
+        String topic = layout.twinEvents(plan.twin(), run.runId());
         topics.create(topic);
         List<TwinEvent> events = run.events().stream().sorted(Comparator.comparingLong(TwinEvent::tMicros)).toList();
         long spanMicros = plan.baseStepMicros() * plan.steps();
