@@ -1,5 +1,5 @@
 # FastAPI and server
-fastapi==0.163.2
+fastapi==0.165.0
 uvicorn[standard]==0.54.0
 python-multipart==0.0.34
 
@@ -12,7 +12,7 @@ greenlet==3.5.6  # Required for SQLAlchemy async operations
 
 # Authentication
 python-jose[cryptography]==3.5.0
-passlib[bcrypt]==1.7.4
+passlib[bcrypt]==1.9.5
 bcrypt==4.3.0  # Pin compatible version for passlib
 python-dotenv==1.2.4
 
@@ -32,7 +32,7 @@ numpy==2.5.5
 pandas==3.1.1
 
 # Utilities
-pydantic==2.14.3
+pydantic==2.14.4
 pydantic-settings==2.16.3
 httpx==0.28.1
 
